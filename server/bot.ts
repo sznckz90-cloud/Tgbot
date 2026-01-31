@@ -107,9 +107,9 @@ export function setupBot() {
       inline_keyboard: [
         [{ text: "♻️ Refresh", callback_data: "refresh" }],
         [{ text: "🚀 Upgrade", callback_data: "upgrade" }, { text: "🎁 Promo", callback_data: "promo" }],
-        [{ text: "👥 Partners", callback_data: "partners" }, { text: "ℹ️ Info", callback_data: "info" }],
+        [{ text: "👥 Partners", callback_data: "partners" }, { text: "👤 Account", callback_data: "account" }],
         [{ text: "💸 Earnings", callback_data: "earnings" }, { text: "🏦 Withdraw", callback_data: "withdraw" }],
-        [{ text: "👤 Account", callback_data: "account" }]
+        [{ text: "ℹ️ Info", callback_data: "info" }]
       ]
     }
   };
@@ -125,13 +125,23 @@ export function setupBot() {
     const chatId = msg.chat.id;
     const referralCode = match?.[1]; // The 'start' parameter
     
-    await getUserOrRegister(msg, referralCode);
+    const user = await getUserOrRegister(msg, referralCode);
+    if (!user) return;
+
+    // Calculate mined TON immediately for current display
+    const now = Date.now();
+    const lastClaim = user.lastClaimTime;
+    const diffSeconds = (now - lastClaim) / 1000;
+    const miningRatePer5Sec = getMiningRate(user.miningLevel);
+    const miningRatePerSec = miningRatePer5Sec / 5;
+    const minedAmount = diffSeconds * miningRatePerSec;
+    const currentBalance = user.balance + minedAmount;
     
     const welcomeText = `
 🪪 *Dashboard*
 
-💰 Balance: 0.000000 TON
-⛏️ Mining Speed: ${MINING_SPEEDS[1]} TON / 5 seconds
+💰 Balance: ${currentBalance.toFixed(8)} TON
+⛏️ Mining Speed: ${miningRatePer5Sec} TON / 5 seconds
 
 TON — Mining without limits
 `;
@@ -444,23 +454,27 @@ Enter your promo code below to get rewards like free TON or mining speed boosts!
         chat_id: chatId,
         message_id: messageId,
         parse_mode: "Markdown",
-        reply_markup: promoKeyboard.reply_markup
-      }).then(() => {
-        bot?.sendMessage(chatId, "🎁 Type your promo code now:", {
-          reply_markup: { force_reply: true }
-        }).then(sent => {
-          bot?.onReplyToMessage(chatId, sent.message_id, async (reply) => {
-            const code = reply.text?.trim().toUpperCase();
-            if (code === "FREE_TON") {
-              await storage.updateUser(user.id, {
-                balance: user.balance + 1
-              });
-              bot?.sendMessage(chatId, "🎉 Promo code redeemed! +1 TON added to your balance.");
-            } else {
-              bot?.sendMessage(chatId, "❌ Invalid promo code.");
-            }
-          });
-        });
+        reply_markup: {
+          force_reply: true,
+          inline_keyboard: promoKeyboard.reply_markup.inline_keyboard
+        } as any
+      });
+
+      // Listen for the next message from this user specifically to avoid global conflict
+      // This is a simplified approach; in production you'd track user state
+      bot?.onReplyToMessage(chatId, messageId, async (reply) => {
+        const code = reply.text?.trim().toUpperCase();
+        if (code === "FREE_TON") {
+          const freshUser = await storage.getUserByTelegramId(telegramId);
+          if (freshUser) {
+            await storage.updateUser(freshUser.id, {
+              balance: freshUser.balance + 1
+            });
+            bot?.sendMessage(chatId, "🎉 Promo code redeemed! +1 TON added to your balance.");
+          }
+        } else {
+          bot?.sendMessage(chatId, "❌ Invalid promo code.");
+        }
       });
     }
   });

@@ -40,7 +40,16 @@ const translations: Record<string, Record<string, string>> = {
     partnersTitle: "👥 *Partners Program*",
     partnersDesc: "Invite friends and earn TON!",
     partnersReward: "Earn *{amount} TON* for each active referral",
-    partnersBonus: "Get +10% mining speed (coming soon)",
+    partnersBonus: "+10% mining speed bonus (active with referrals)",
+    shareReferral: "🔗 Share Referral",
+    shareReferralMessage: "🚀 Start earning TON with me!\n\nMine TON every second using this bot.\nJoin now and get faster mining speed 💰\n\n👉 Start here: {link}",
+    language: "🌎 Language",
+    support: "📞 Support",
+    notification: "🔔 Notification",
+    notificationOn: "🔔 Notifications: ON",
+    notificationOff: "🔕 Notifications: OFF",
+    notificationToggled: "Notifications updated!",
+    supportMessage: "📞 *Support*\n\nFor any issues or questions, please contact our support team.",
     referralLink: "🔗 *Your Referral Link:*",
     totalReferrals: "Total Referrals",
     infoTitle: "ℹ️ *Information*",
@@ -128,7 +137,16 @@ const translations: Record<string, Record<string, string>> = {
     partnersTitle: "👥 *Партнёрская программа*",
     partnersDesc: "Приглашайте друзей и зарабатывайте TON!",
     partnersReward: "Получайте *{amount} TON* за каждого активного реферала",
-    partnersBonus: "Получите +10% к скорости майнинга (скоро)",
+    partnersBonus: "+10% бонус к скорости майнинга (активен с рефералами)",
+    shareReferral: "🔗 Поделиться",
+    shareReferralMessage: "🚀 Начни зарабатывать TON со мной!\n\nМайни TON каждую секунду с этим ботом.\nПрисоединяйся и получи ускоренный майнинг 💰\n\n👉 Начать: {link}",
+    language: "🌎 Язык",
+    support: "📞 Поддержка",
+    notification: "🔔 Уведомления",
+    notificationOn: "🔔 Уведомления: ВКЛ",
+    notificationOff: "🔕 Уведомления: ВЫКЛ",
+    notificationToggled: "Уведомления обновлены!",
+    supportMessage: "📞 *Поддержка*\n\nПо любым вопросам обращайтесь в нашу службу поддержки.",
     referralLink: "🔗 *Ваша реферальная ссылка:*",
     totalReferrals: "Всего рефералов",
     infoTitle: "ℹ️ *Информация*",
@@ -216,7 +234,16 @@ const translations: Record<string, Record<string, string>> = {
     partnersTitle: "👥 *Programa de socios*",
     partnersDesc: "¡Invita amigos y gana TON!",
     partnersReward: "Gana *{amount} TON* por cada referido activo",
-    partnersBonus: "Obtén +10% velocidad de minería (próximamente)",
+    partnersBonus: "+10% bonus de velocidad (activo con referidos)",
+    shareReferral: "🔗 Compartir",
+    shareReferralMessage: "🚀 ¡Empieza a ganar TON conmigo!\n\nMina TON cada segundo con este bot.\nÚnete ahora y obtén minería más rápida 💰\n\n👉 Empieza aquí: {link}",
+    language: "🌎 Idioma",
+    support: "📞 Soporte",
+    notification: "🔔 Notificación",
+    notificationOn: "🔔 Notificaciones: ON",
+    notificationOff: "🔕 Notificaciones: OFF",
+    notificationToggled: "¡Notificaciones actualizadas!",
+    supportMessage: "📞 *Soporte*\n\nPara cualquier problema o pregunta, contacta a nuestro equipo.",
     referralLink: "🔗 *Tu enlace de referido:*",
     totalReferrals: "Total de referidos",
     infoTitle: "ℹ️ *Información*",
@@ -304,7 +331,16 @@ const translations: Record<string, Record<string, string>> = {
     partnersTitle: "👥 *Programa de parceiros*",
     partnersDesc: "Convide amigos e ganhe TON!",
     partnersReward: "Ganhe *{amount} TON* por cada indicação ativa",
-    partnersBonus: "Ganhe +10% velocidade de mineração (em breve)",
+    partnersBonus: "+10% bônus de velocidade (ativo com indicações)",
+    shareReferral: "🔗 Compartilhar",
+    shareReferralMessage: "🚀 Comece a ganhar TON comigo!\n\nMinere TON a cada segundo com este bot.\nJunte-se e ganhe mineração mais rápida 💰\n\n👉 Comece aqui: {link}",
+    language: "🌎 Idioma",
+    support: "📞 Suporte",
+    notification: "🔔 Notificação",
+    notificationOn: "🔔 Notificações: ON",
+    notificationOff: "🔕 Notificações: OFF",
+    notificationToggled: "Notificações atualizadas!",
+    supportMessage: "📞 *Suporte*\n\nPara qualquer problema ou dúvida, contate nossa equipe.",
     referralLink: "🔗 *Seu link de indicação:*",
     totalReferrals: "Total de indicações",
     infoTitle: "ℹ️ *Informações*",
@@ -392,7 +428,16 @@ const translations: Record<string, Record<string, string>> = {
     partnersTitle: "👥 *Programme partenaires*",
     partnersDesc: "Invitez des amis et gagnez des TON!",
     partnersReward: "Gagnez *{amount} TON* par parrainage actif",
-    partnersBonus: "Obtenez +10% vitesse de minage (bientôt)",
+    partnersBonus: "+10% bonus de vitesse (actif avec parrainages)",
+    shareReferral: "🔗 Partager",
+    shareReferralMessage: "🚀 Commence à gagner des TON avec moi!\n\nMine des TON chaque seconde avec ce bot.\nRejoins-nous et obtiens un minage plus rapide 💰\n\n👉 Commence ici: {link}",
+    language: "🌎 Langue",
+    support: "📞 Support",
+    notification: "🔔 Notification",
+    notificationOn: "🔔 Notifications: ON",
+    notificationOff: "🔕 Notifications: OFF",
+    notificationToggled: "Notifications mises à jour!",
+    supportMessage: "📞 *Support*\n\nPour toute question, contactez notre équipe.",
     referralLink: "🔗 *Votre lien de parrainage:*",
     totalReferrals: "Total parrainages",
     infoTitle: "ℹ️ *Informations*",
@@ -480,7 +525,16 @@ const translations: Record<string, Record<string, string>> = {
     partnersTitle: "👥 *برنامج الشركاء*",
     partnersDesc: "ادعُ أصدقاءك واربح TON!",
     partnersReward: "اربح *{amount} TON* لكل إحالة نشطة",
-    partnersBonus: "احصل على +10% سرعة تعدين (قريباً)",
+    partnersBonus: "+10% مكافأة السرعة (نشط مع الإحالات)",
+    shareReferral: "🔗 مشاركة",
+    shareReferralMessage: "🚀 ابدأ ربح TON معي!\n\nعدّن TON كل ثانية مع هذا البوت.\nانضم واحصل على تعدين أسرع 💰\n\n👉 ابدأ هنا: {link}",
+    language: "🌎 اللغة",
+    support: "📞 الدعم",
+    notification: "🔔 الإشعارات",
+    notificationOn: "🔔 الإشعارات: مفعّل",
+    notificationOff: "🔕 الإشعارات: معطّل",
+    notificationToggled: "تم تحديث الإشعارات!",
+    supportMessage: "📞 *الدعم*\n\nلأي مشكلة أو سؤال، تواصل مع فريق الدعم.",
     referralLink: "🔗 *رابط الإحالة الخاص بك:*",
     totalReferrals: "إجمالي الإحالات",
     infoTitle: "ℹ️ *معلومات*",
@@ -670,8 +724,13 @@ export function setupBot() {
     return user;
   }
 
-  function getMiningRate(level: number) {
-    return MINING_SPEEDS[level] || MINING_SPEEDS[1];
+  function getMiningRate(level: number, referralCount: number = 0) {
+    const baseRate = MINING_SPEEDS[level] || MINING_SPEEDS[1];
+    // Apply +10% bonus if user has at least 1 active referral
+    if (referralCount >= 1) {
+      return baseRate * 1.10;
+    }
+    return baseRate;
   }
 
   function getMainMenuKeyboard(lang: string | null | undefined) {
@@ -760,7 +819,7 @@ ${t(lang, "miningTagline")}
     const now = Date.now();
     const lastClaim = user.lastClaimTime;
     const diffSeconds = (now - lastClaim) / 1000;
-    const miningRatePer5Sec = getMiningRate(user.miningLevel);
+    const miningRatePer5Sec = getMiningRate(user.miningLevel, user.referralCount);
     const miningRatePerSec = miningRatePer5Sec / 5;
     const minedAmount = diffSeconds * miningRatePerSec;
     const currentBalance = user.balance + minedAmount;
@@ -807,7 +866,7 @@ ${t(lang, "miningTagline")}
           if (user) {
             await storage.updateUser(user.id, { isOnboarded: true });
             await bot?.sendMessage(chatId, t(user.language, "letsGo"));
-            const welcomeText = getDashboardText(user.language, user.balance, getMiningRate(user.miningLevel));
+            const welcomeText = getDashboardText(user.language, user.balance, getMiningRate(user.miningLevel, user.referralCount));
             bot?.sendMessage(chatId, welcomeText, { parse_mode: "Markdown", ...getMainMenuKeyboard(user.language) });
           }
         } else {
@@ -835,7 +894,7 @@ ${t(lang, "miningTagline")}
       const now = Date.now();
       const lastClaim = user.lastClaimTime;
       const diffSeconds = (now - lastClaim) / 1000;
-      const miningRatePer5Sec = getMiningRate(user.miningLevel);
+      const miningRatePer5Sec = getMiningRate(user.miningLevel, user.referralCount);
       const miningRatePerSec = miningRatePer5Sec / 5;
       
       const minedAmount = diffSeconds * miningRatePerSec;
@@ -923,7 +982,7 @@ ${t(lang, "yourBalance")}: ${user.balance.toFixed(4)} TON
       const updatedUser = await storage.getUser(user.id);
       if (!updatedUser) return;
 
-      const text = getDashboardText(lang, updatedUser.balance, getMiningRate(updatedUser.miningLevel));
+      const text = getDashboardText(lang, updatedUser.balance, getMiningRate(updatedUser.miningLevel, updatedUser.referralCount));
       bot?.editMessageText(text, {
         chat_id: chatId,
         message_id: messageId,
@@ -935,23 +994,32 @@ ${t(lang, "yourBalance")}: ${user.balance.toFixed(4)} TON
       const botUsername = (await bot?.getMe())?.username;
       const referralLink = `https://t.me/${botUsername}?start=${telegramId}`;
       
+      const bonusStatus = user.referralCount >= 1 ? "✅ ACTIVE" : "⏳ Invite 1+ friend";
       const text = `
 ${t(lang, "partnersTitle")}
 
 ${t(lang, "partnersDesc")}
 • ${t(lang, "partnersReward").replace("{amount}", REFERRAL_REWARD.toString())}
-• ${t(lang, "partnersBonus")}
+• ${t(lang, "partnersBonus")} ${bonusStatus}
 
 ${t(lang, "referralLink")}
 \`${referralLink}\`
 
 ${t(lang, "totalReferrals")}: ${user.referralCount}
 `;
+      const partnersKeyboard = {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t(lang, "shareReferral"), callback_data: "share_referral" }],
+            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
+          ]
+        }
+      };
       bot?.editMessageText(text, {
         chat_id: chatId,
         message_id: messageId,
         parse_mode: "Markdown",
-        reply_markup: getBackButton(lang).reply_markup
+        reply_markup: partnersKeyboard.reply_markup
       });
 
     } else if (query.data === "info") {
@@ -1109,6 +1177,7 @@ ${t(lang, "channelTaskNote")}
       bot?.answerCallbackQuery(query.id, { text: t(lang, "verificationPending"), show_alert: true });
       
     } else if (query.data === "account") {
+      const notifStatus = (user as any).notificationsEnabled !== false;
       const text = `
 ${t(lang, "accountTitle")}
 
@@ -1119,11 +1188,21 @@ ${t(lang, "accountJoined")}: ${new Date(user.createdAt || Date.now()).toLocaleDa
 ${t(lang, "accountLevel")}: ${user.miningLevel}
 ${t(lang, "accountStatus")}: ${user.status.toUpperCase()}
 `;
+      const accountKeyboard = {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t(lang, "language"), callback_data: "change_language" }],
+            [{ text: t(lang, "support"), callback_data: "support" }],
+            [{ text: notifStatus ? t(lang, "notificationOn") : t(lang, "notificationOff"), callback_data: "toggle_notification" }],
+            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
+          ]
+        }
+      };
       bot?.editMessageText(text, {
         chat_id: chatId,
         message_id: messageId,
         parse_mode: "Markdown",
-        reply_markup: getBackButton(lang).reply_markup
+        reply_markup: accountKeyboard.reply_markup
       });
 
     } else if (query.data === "withdraw") {
@@ -1200,6 +1279,105 @@ ${t(lang, "minWithdraw")}: ${minWithdraw} TON
       bot?.answerCallbackQuery(query.id, { text: "Coming soon!", show_alert: true });
     } else if (query.data === "no_balance") {
       bot?.answerCallbackQuery(query.id, { text: t(lang, "insufficientFunds"), show_alert: true });
+    } else if (query.data === "share_referral") {
+      const botUsername = (await bot?.getMe())?.username;
+      const referralLink = `https://t.me/${botUsername}?start=${telegramId}`;
+      const shareMessage = t(lang, "shareReferralMessage").replace("{link}", referralLink);
+      
+      await bot?.sendMessage(chatId, shareMessage, { parse_mode: "Markdown" });
+      
+    } else if (query.data === "change_language") {
+      const languageInlineKeyboard = {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🇷🇺 Русский", callback_data: "set_lang_ru" }, { text: "🇬🇧 English", callback_data: "set_lang_en" }],
+            [{ text: "🇪🇸 Español", callback_data: "set_lang_es" }, { text: "🇵🇹 Português", callback_data: "set_lang_pt" }],
+            [{ text: "🇫🇷 Français", callback_data: "set_lang_fr" }, { text: "🇾🇪 العربية", callback_data: "set_lang_ar" }],
+            [{ text: t(lang, "back"), callback_data: "account" }]
+          ]
+        }
+      };
+      bot?.editMessageText(t(null, "selectLanguage"), {
+        chat_id: chatId,
+        message_id: messageId,
+        reply_markup: languageInlineKeyboard.reply_markup
+      });
+      
+    } else if (query.data.startsWith("set_lang_")) {
+      const newLang = query.data.split("_")[2];
+      await storage.updateUser(user.id, { language: newLang });
+      bot?.answerCallbackQuery(query.id, { text: "Language updated!", show_alert: true });
+      
+      const notifStatus = (user as any).notificationsEnabled !== false;
+      const text = `
+${t(newLang, "accountTitle")}
+
+${t(newLang, "accountId")}: \`${telegramId}\`
+${t(newLang, "accountLang")}: ${newLang}
+${t(newLang, "accountReferrals")}: ${user.referralCount}
+${t(newLang, "accountJoined")}: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}
+${t(newLang, "accountLevel")}: ${user.miningLevel}
+${t(newLang, "accountStatus")}: ${user.status.toUpperCase()}
+`;
+      const accountKeyboard = {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t(newLang, "language"), callback_data: "change_language" }],
+            [{ text: t(newLang, "support"), callback_data: "support" }],
+            [{ text: notifStatus ? t(newLang, "notificationOn") : t(newLang, "notificationOff"), callback_data: "toggle_notification" }],
+            [{ text: t(newLang, "back"), callback_data: "back_to_menu" }]
+          ]
+        }
+      };
+      bot?.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        reply_markup: accountKeyboard.reply_markup
+      });
+      
+    } else if (query.data === "support") {
+      bot?.editMessageText(t(lang, "supportMessage"), {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [[{ text: t(lang, "back"), callback_data: "account" }]]
+        }
+      });
+      
+    } else if (query.data === "toggle_notification") {
+      const currentStatus = (user as any).notificationsEnabled !== false;
+      const newStatus = !currentStatus;
+      await storage.updateUser(user.id, { notificationsEnabled: newStatus } as any);
+      bot?.answerCallbackQuery(query.id, { text: t(lang, "notificationToggled"), show_alert: true });
+      
+      const text = `
+${t(lang, "accountTitle")}
+
+${t(lang, "accountId")}: \`${telegramId}\`
+${t(lang, "accountLang")}: ${lang || 'en'}
+${t(lang, "accountReferrals")}: ${user.referralCount}
+${t(lang, "accountJoined")}: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}
+${t(lang, "accountLevel")}: ${user.miningLevel}
+${t(lang, "accountStatus")}: ${user.status.toUpperCase()}
+`;
+      const accountKeyboard = {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t(lang, "language"), callback_data: "change_language" }],
+            [{ text: t(lang, "support"), callback_data: "support" }],
+            [{ text: newStatus ? t(lang, "notificationOn") : t(lang, "notificationOff"), callback_data: "toggle_notification" }],
+            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
+          ]
+        }
+      };
+      bot?.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        reply_markup: accountKeyboard.reply_markup
+      });
     }
   });
 

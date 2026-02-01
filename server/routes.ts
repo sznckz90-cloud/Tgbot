@@ -41,6 +41,39 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/verify", async (req, res) => {
+    const { token } = req.query;
+    if (!token) return res.status(400).send("Missing token");
+    
+    const user = await storage.getUserByVerificationToken(token as string);
+    if (!user || !user.verificationExpiresAt || user.verificationExpiresAt < new Date()) {
+      return res.status(400).send("Invalid or expired token");
+    }
+
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    const ipString: string = (Array.isArray(ip) ? ip[0] : (ip as string | undefined)) || "unknown";
+    await storage.updateUser(user.id, { 
+      isVerified: true, 
+      verificationToken: null, 
+      verificationExpiresAt: null,
+      ipAddress: ipString
+    });
+
+    res.send(`
+      <html>
+        <body style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif;">
+          <h1>✅ Verified!</h1>
+          <p>You can now return to the bot.</p>
+          <script>
+            setTimeout(() => {
+              window.close();
+            }, 3000);
+          </script>
+        </body>
+      </html>
+    `);
+  });
+
   app.patch(api.admin.withdrawals.updateStatus.path, async (req, res) => {
     try {
       const id = parseInt(req.params.id);

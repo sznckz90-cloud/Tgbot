@@ -11,9 +11,7 @@ export interface IStorage {
   createWithdrawal(withdrawal: InsertWithdrawal): Promise<Withdrawal>;
   getWithdrawals(): Promise<(Withdrawal & { user: User })[]>;
   updateWithdrawalStatus(id: number, status: string): Promise<Withdrawal>;
-  
-  getStats(): Promise<{ totalUsers: number; totalWithdrawals: number; totalBalance: number }>;
-  getAllUsers(): Promise<User[]>;
+  getUserByVerificationToken(token: string): Promise<User | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -57,6 +55,11 @@ export class DatabaseStorage implements IStorage {
       .where(eq(withdrawals.id, id))
       .returning();
     return withdrawal;
+  }
+
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.verificationToken, token));
+    return user;
   }
 
   async getStats(): Promise<{ totalUsers: number; totalWithdrawals: number; totalBalance: number }> {

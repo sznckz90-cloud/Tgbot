@@ -102,6 +102,40 @@ export function setupBot() {
   }
 
   // --- Keyboards ---
+  const languageKeyboard = {
+    reply_markup: {
+      keyboard: [
+        [{ text: "🇷🇺 Русский" }, { text: "🇬🇧 English" }],
+        [{ text: "🇪🇸 Español" }, { text: "🇵🇹 Português" }],
+        [{ text: "🇫🇷 Français" }, { text: "🇾🇪 العربية" }]
+      ],
+      resize_keyboard: true,
+      one_time_keyboard: true
+    }
+  };
+
+  const verificationKeyboard = (token: string) => {
+    const domain = process.env.REPLIT_DEV_DOMAIN;
+    return {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "🛡️ I am not a bot", url: `https://${domain}/verify?token=${token}` }]
+        ]
+      }
+    };
+  };
+
+  const subscribeKeyboard = {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: "🚀 Subscribe", url: "https://t.me/your_channel_link" },
+          { text: "✅ I'm subscribed", callback_data: "check_subscription" }
+        ]
+      ]
+    }
+  };
+
   const mainMenuKeyboard = {
     reply_markup: {
       inline_keyboard: [
@@ -123,11 +157,34 @@ export function setupBot() {
   // --- Commands ---
   bot.onText(/\/start(?:\s+(.+))?/, async (msg, match) => {
     const chatId = msg.chat.id;
-    const referralCode = match?.[1]; // The 'start' parameter
+    const referralCode = match?.[1];
     
-    const user = await getUserOrRegister(msg, referralCode);
-    if (!user) return;
+    const userResult = await storage.getUserByTelegramId(msg.from?.id.toString() || "");
+    let user = userResult;
+    
+    if (!user) {
+      const newUser = await getUserOrRegister(msg, referralCode);
+      if (!newUser) return;
+      user = newUser;
+      
+      return bot?.sendMessage(chatId, "Select language / Выберите язык", languageKeyboard);
+    }
 
+    if (!user.isOnboarded) {
+      if (!user.language) {
+        return bot?.sendMessage(chatId, "Select language / Выберите язык", languageKeyboard);
+      }
+      if (!user.isVerified) {
+        const token = Math.random().toString(36).substring(2, 15);
+        await storage.updateUser(user.id, { 
+          verificationToken: token,
+          verificationExpiresAt: new Date(Date.now() + 3 * 60 * 1000)
+        });
+        return bot?.sendMessage(chatId, "👽 To continue, you need to confirm that you are not a bot", verificationKeyboard(token));
+      }
+      return bot?.sendMessage(chatId, "😉 Make sure you subscribe to our channel before you get started", subscribeKeyboard);
+    }
+    
     // Calculate mined TON immediately for current display
     const now = Date.now();
     const lastClaim = user.lastClaimTime;
@@ -148,12 +205,71 @@ TON — Mining without limits
     bot?.sendMessage(chatId, welcomeText, { parse_mode: "Markdown", ...mainMenuKeyboard });
   });
 
+  bot.on("message", async (msg) => {
+    if (msg.text && ["🇷🇺 Русский", "🇬🇧 English", "🇪🇸 Español", "🇵🇹 Português", "🇫🇷 Français", "🇾🇪 العربية"].includes(msg.text)) {
+      const telegramId = msg.from?.id.toString();
+      if (!telegramId) return;
+      const user = await storage.getUserByTelegramId(telegramId);
+      if (user && !user.language) {
+        const langMap: Record<string, string> = {
+          "🇷🇺 Русский": "ru", "🇬🇧 English": "en", "🇪🇸 Español": "es",
+          "🇵🇹 Português": "pt", "🇫🇷 Français": "fr", "🇾🇪 العربية": "ar"
+        };
+        await storage.updateUser(user.id, { language: langMap[msg.text] });
+        
+        const token = Math.random().toString(36).substring(2, 15);
+        await storage.updateUser(user.id, { 
+          verificationToken: token,
+          verificationExpiresAt: new Date(Date.now() + 3 * 60 * 1000)
+        });
+        bot?.sendMessage(msg.chat.id, "👽 To continue, you need to confirm that you are not a bot", {
+          ...verificationKeyboard(token),
+          reply_markup: { ...verificationKeyboard(token).reply_markup, remove_keyboard: true }
+        } as any);
+      }
+    }
+  });
+
   // --- Callback Queries ---
   bot.on("callback_query", async (query) => {
     if (!query.message || !query.data) return;
     const chatId = query.message.chat.id;
     const telegramId = query.from.id.toString();
     const messageId = query.message.message_id;
+
+    if (query.data === "check_subscription") {
+      try {
+        // In a real bot, we would use getChatMember
+        // const member = await bot?.getChatMember("@your_channel_username", query.from.id);
+        // const isSubscribed = ["member", "administrator", "creator"].includes(member.status);
+        
+        const isSubscribed = true; // Simulated for now
+        
+        if (isSubscribed) {
+          const user = await storage.getUserByTelegramId(telegramId);
+          if (user) {
+            await storage.updateUser(user.id, { isOnboarded: true });
+            await bot?.sendMessage(chatId, "🏂 Let's go?");
+            // Trigger main menu
+            const now = Date.now();
+            const welcomeText = `
+🪪 *Dashboard*
+
+💰 Balance: ${user.balance.toFixed(8)} TON
+⛏️ Mining Speed: ${getMiningRate(user.miningLevel)} TON / 5 seconds
+
+TON — Mining without limits
+`;
+            bot?.sendMessage(chatId, welcomeText, { parse_mode: "Markdown", ...mainMenuKeyboard });
+          }
+        } else {
+          bot?.answerCallbackQuery(query.id, { text: "❌ You are not subscribed yet!", show_alert: true });
+        }
+      } catch (e) {
+        bot?.answerCallbackQuery(query.id, { text: "❌ Error checking subscription.", show_alert: true });
+      }
+      return;
+    }
 
     // Acknowledge callback immediately to stop loading animation
     bot?.answerCallbackQuery(query.id);
@@ -207,7 +323,7 @@ TON — Mining without limits
       const cost = UPGRADE_COSTS[currentLevel]; // Cost to move FROM current TO next
       
       if (!cost) {
-        bot?.sendMessage(chat_id, "🚀 Max level reached!");
+        bot?.sendMessage(chatId, "🚀 Max level reached!");
         return;
       }
 

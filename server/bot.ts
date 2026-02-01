@@ -115,7 +115,7 @@ export function setupBot() {
   };
 
   const verificationKeyboard = (token: string) => {
-    const domain = process.env.REPLIT_DEV_DOMAIN;
+    const domain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(',')[0];
     return {
       reply_markup: {
         inline_keyboard: [
@@ -178,7 +178,7 @@ export function setupBot() {
         const token = Math.random().toString(36).substring(2, 15);
         await storage.updateUser(user.id, { 
           verificationToken: token,
-          verificationExpiresAt: new Date(Date.now() + 3 * 60 * 1000)
+          verificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
         });
         return bot?.sendMessage(chatId, "👽 To continue, you need to confirm that you are not a bot", verificationKeyboard(token));
       }
@@ -220,7 +220,7 @@ TON — Mining without limits
         const token = Math.random().toString(36).substring(2, 15);
         await storage.updateUser(user.id, { 
           verificationToken: token,
-          verificationExpiresAt: new Date(Date.now() + 3 * 60 * 1000)
+          verificationExpiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000)
         });
         bot?.sendMessage(msg.chat.id, "👽 To continue, you need to confirm that you are not a bot", {
           ...verificationKeyboard(token),
@@ -447,18 +447,155 @@ This is a TON cloud mining simulator. You can mine TON coins, upgrade your minin
       });
 
     } else if (query.data === "earnings") {
-      const text = `
+      const activeTasks = await storage.getActiveTasksForUser(user.id);
+      
+      if (activeTasks.length === 0) {
+        const text = `
 💸 *Earnings & Tasks*
 
-Currently, there are no active tasks available. Check back later!
+Currently, there are no active tasks available.
+Please check back later.
 `;
+        bot?.editMessageText(text, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: "Markdown",
+          reply_markup: backButton.reply_markup
+        });
+      } else {
+        const text = `
+💸 *Earnings & Tasks*
+
+New tasks are available!
+Complete tasks and earn rewards.
+`;
+        const earningsKeyboard = {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "👉 Go to the task list 👈", callback_data: "task_list" }],
+              [{ text: "↩️ Back", callback_data: "back_to_menu" }]
+            ]
+          }
+        };
+        bot?.editMessageText(text, {
+          chat_id: chatId,
+          message_id: messageId,
+          parse_mode: "Markdown",
+          reply_markup: earningsKeyboard.reply_markup
+        });
+      }
+
+    } else if (query.data === "task_list") {
+      const activeTasks = await storage.getActiveTasksForUser(user.id);
+      let text = "📌 *Task List*\n\n";
+      const inline_keyboard: any[][] = [];
+
+      for (const task of activeTasks) {
+        text += `${task.type === 'channel' ? '🔹 Channel Subscribe Task' : '🔹 Bot Start Task'}\n`;
+        inline_keyboard.push([{ text: `👉 ${task.title}`, callback_data: `view_task_${task.id}` }]);
+      }
+      inline_keyboard.push([{ text: "↩️ Back", callback_data: "earnings" }]);
+
       bot?.editMessageText(text, {
         chat_id: chatId,
         message_id: messageId,
         parse_mode: "Markdown",
-        reply_markup: backButton.reply_markup
+        reply_markup: { inline_keyboard }
       });
 
+    } else if (query.data.startsWith("view_task_")) {
+      const taskId = parseInt(query.data.split("_")[2]);
+      const task = await storage.getTask(taskId);
+      if (!task) return;
+
+      let text = "";
+      if (task.type === "channel") {
+        text = `
+📌 *New Task: Subscribe to the Channel*
+
+➡️ Join the channel using the button below  
+➡️ Stay subscribed for at least 7 days  
+
+⚠️ Reward will be credited after verification.
+`;
+      } else {
+        text = `
+📌 *New Task: Start the Bot*
+
+➡️ Open the bot using the button below  
+➡️ Do NOT block the bot for at least 7 days  
+❗ Blocking before 7 days may lead to penalty  
+
+⚠️ Reward will be credited after verification.
+`;
+      }
+
+      bot?.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "👉 Click here to Claim 👈", callback_data: `claim_task_${task.id}` }],
+            [{ text: "↩️ Back", callback_data: "task_list" }]
+          ]
+        }
+      });
+
+    } else if (query.data.startsWith("claim_task_")) {
+      const taskId = parseInt(query.data.split("_")[2]);
+      const task = await storage.getTask(taskId);
+      if (!task) return;
+
+      let userTask = await storage.getUserTask(user.id, task.id);
+      if (!userTask) {
+        userTask = await storage.createUserTask({
+          userId: user.id,
+          taskId: task.id,
+          status: "pending"
+        });
+      }
+
+      let text = "";
+      const inline_keyboard: any[][] = [];
+
+      if (task.type === "channel") {
+        text = `
+👉🏻 *Mission: Engage with the channel and join it.*
+
+❓ After joining, press « ✅ Joined » below.
+`;
+        inline_keyboard.push([{ text: "✅ Joined", callback_data: `check_mission_${task.id}` }]);
+      } else {
+        text = `
+👉🏻 *Mission: Engage with the bot.*
+
+❓ Press « ✅ Started » and then forward ANY message
+from that bot here for verification.
+`;
+        inline_keyboard.push([{ text: "✅ Started", callback_data: `check_mission_${task.id}` }]);
+      }
+      
+      inline_keyboard.push([{ text: "↪️ Skip", callback_data: "task_list" }]);
+      inline_keyboard.push([{ text: "🔄 Check", callback_data: `check_mission_${task.id}` }]);
+
+      bot?.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        reply_markup: { inline_keyboard }
+      });
+
+    } else if (query.data.startsWith("check_mission_")) {
+      const taskId = parseInt(query.data.split("_")[2]);
+      const task = await storage.getTask(taskId);
+      if (!task) return;
+
+      // In a real bot, we'd verify here (getChatMember, etc.)
+      // For now, let's simulate a successful check after 7 days logic would be cron/background
+      // But for the immediate UI feedback:
+      bot?.answerCallbackQuery(query.id, { text: "⏳ Verification in progress. Please wait up to 7 days.", show_alert: true });
+      
     } else if (query.data === "account") {
       const text = `
 👤 *Account Info*

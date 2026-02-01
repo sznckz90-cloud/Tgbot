@@ -4,6 +4,41 @@ import { storage } from "./storage";
 let botInstance: TelegramBot | null = null;
 let isPolling = false;
 
+// Constants
+const REFERRAL_REWARD = 0.05;
+const MINING_SPEEDS: Record<number, number> = {
+  1: 0.0000001,
+  2: 0.0000025,
+  3: 0.0000075,
+  4: 0.0000175,
+  5: 0.0000375,
+  6: 0.0000775,
+  7: 0.0001375,
+  8: 0.0002175,
+  9: 0.0003175,
+  10: 0.0005175,
+  11: 0.0008175,
+  12: 0.0012175,
+  13: 0.0017175,
+  14: 0.0027175
+};
+
+const UPGRADE_COSTS: Record<number, number> = {
+  1: 0.5,
+  2: 1.0,
+  3: 2.0,
+  4: 4.0,
+  5: 8.0,
+  6: 12.0,
+  7: 16.0,
+  8: 20.0,
+  9: 40.0,
+  10: 60.0,
+  11: 80.0,
+  12: 100.0,
+  13: 200.0
+};
+
 // Translations
 const translations: Record<string, Record<string, string>> = {
   en: {
@@ -19,7 +54,18 @@ const translations: Record<string, Record<string, string>> = {
     account: "👤 Account",
     earnings: "💸 Earnings",
     withdraw: "🏦 Withdraw",
-    info: "ℹ️ Info",
+    advertise: "📈 Advertise",
+    faq: "❓ FAQ",
+    faqTitle: "❓ *Frequently Asked Questions*",
+    faqDesc: "Welcome to the TON Miner FAQ section. Here you can find answers to the most common questions.",
+    faqQ1: "💎 *What is TON Miner?*",
+    faqA1: "It is a simulation of cloud mining where you can earn TON by upgrading your virtual hardware.",
+    faqQ2: "💸 *How to withdraw?*",
+    faqA2: "Go to the 'Account' section, click 'Withdraw', enter your wallet address and the amount. Minimum withdrawal is 0.5 TON.",
+    faqQ3: "🚀 *How to increase speed?*",
+    faqA3: "You can increase your mining speed by clicking the 'Upgrade' button on the dashboard or through the 'Account' section.",
+    faqQ4: "👥 *Partners program?*",
+    faqA4: "Invite friends using your referral link in the 'Partners' section and earn rewards for each active referral!",
     back: "↩️ Back",
     subscribe: "🚀 Subscribe",
     subscribed: "✅ I'm subscribed",
@@ -52,15 +98,6 @@ const translations: Record<string, Record<string, string>> = {
     supportMessage: "📞 *Support*\n\nFor any issues or questions, please contact our support team.",
     referralLink: "🔗 *Your Referral Link:*",
     totalReferrals: "Total Referrals",
-    infoTitle: "ℹ️ *Information*",
-    infoWhat: "🤖 *What is this bot?*",
-    infoWhatDesc: "This is a TON cloud mining simulator. You can mine TON coins, upgrade your mining rig, and withdraw real rewards.",
-    infoHow: "⚙️ *How it works?*",
-    infoStep1: "1. Press \"Refresh\" to collect mined TON.",
-    infoStep2: "2. Use \"Upgrade\" to increase your speed.",
-    infoStep3: "3. Invite friends to earn faster.",
-    infoStep4: "4. Withdraw earnings to your wallet.",
-    infoNote: "⚠️ *Note:* This is a simulation bot.",
     earningsTitle: "💸 *Earnings & Tasks*",
     noTasks: "Currently, there are no active tasks available.\nPlease check back later.",
     newTasks: "New tasks are available!\nComplete tasks and earn rewards.",
@@ -75,6 +112,8 @@ const translations: Record<string, Record<string, string>> = {
     accountJoined: "📅 Joined",
     accountLevel: "⚡ Level",
     accountStatus: "🟢 Status",
+    addFunds: "💵 Add funds",
+    withdrawBtn: "🏦 Withdraw",
     withdrawTitle: "🏦 *Withdraw Funds*",
     minWithdraw: "⚠️ Minimum Withdrawal",
     requestWithdraw: "✅ Request Withdrawal",
@@ -595,41 +634,6 @@ function t(lang: string | null | undefined, key: string): string {
   return translations[language]?.[key] || translations.en[key] || key;
 }
 
-// Constants
-const MINING_SPEEDS: Record<number, number> = {
-  1: 0.0000025,
-  2: 0.0000075,
-  3: 0.0000175,
-  4: 0.0000375,
-  5: 0.0000775,
-  6: 0.0001375,
-  7: 0.0002175,
-  8: 0.0003175,
-  9: 0.0005175,
-  10: 0.0008175,
-  11: 0.0012175,
-  12: 0.0017175,
-  13: 0.0027175,
-};
-
-const UPGRADE_COSTS: Record<number, number> = {
-  1: 0.5,
-  2: 1,
-  3: 2,
-  4: 4,
-  5: 8,
-  6: 12,
-  7: 16,
-  8: 20,
-  9: 40,
-  10: 60,
-  11: 80,
-  12: 100,
-  13: 200,
-};
-
-const REFERRAL_REWARD = 0.008;
-
 let bot: TelegramBot | null = null;
 
 export function setupBot() {
@@ -726,23 +730,32 @@ export function setupBot() {
 
   function getMiningRate(level: number, referralCount: number = 0) {
     const baseRate = MINING_SPEEDS[level] || MINING_SPEEDS[1];
-    // Apply +10% bonus if user has at least 1 active referral
-    if (referralCount >= 1) {
-      return baseRate * 1.10;
-    }
+    // Rule: No hidden bonus / multiplier for now as per user request
     return baseRate;
   }
 
   function getMainMenuKeyboard(lang: string | null | undefined) {
     return {
       reply_markup: {
+        keyboard: [
+          [{ text: t(lang, "earnings") }, { text: t(lang, "advertise") || "📈 Advertise" }],
+          [{ text: t(lang, "promo") }, { text: t(lang, "partners") }],
+          [{ text: t(lang, "account") }, { text: t(lang, "faq") || "❓ FAQ" }]
+        ],
+        resize_keyboard: true,
+        persistent: true
+      }
+    };
+  }
+
+  function getDashboardInlineKeyboard(lang: string | null | undefined) {
+    return {
+      reply_markup: {
         inline_keyboard: [
           [{ text: t(lang, "refresh"), callback_data: "refresh" }],
-          [{ text: t(lang, "upgrade"), callback_data: "upgrade" }, { text: t(lang, "promo"), callback_data: "promo" }],
-          [{ text: t(lang, "partners"), callback_data: "partners" }, { text: t(lang, "account"), callback_data: "account" }],
-          [{ text: t(lang, "earnings"), callback_data: "earnings" }, { text: t(lang, "withdraw"), callback_data: "withdraw" }],
-          [{ text: t(lang, "info"), callback_data: "info" }]
-        ]
+          [{ text: t(lang, "upgrade"), callback_data: "upgrade" }]
+        ],
+        remove_keyboard: false
       }
     };
   }
@@ -786,7 +799,7 @@ export function setupBot() {
 ${t(lang, "dashboard")}
 
 ${t(lang, "balance")}: ${balance.toFixed(8)} TON
-${t(lang, "miningSpeed")}: ${miningRate} TON / 5 seconds
+${t(lang, "miningSpeed")}: ${miningRate.toFixed(8)} TON / 5 seconds
 
 ${t(lang, "miningTagline")}
 `;
@@ -825,11 +838,39 @@ ${t(lang, "miningTagline")}
     const currentBalance = user.balance + minedAmount;
     
     const welcomeText = getDashboardText(user.language, currentBalance, miningRatePer5Sec);
-    bot?.sendMessage(chatId, welcomeText, { parse_mode: "Markdown", ...getMainMenuKeyboard(user.language) });
+    
+    bot?.sendMessage(chatId, welcomeText, { 
+      parse_mode: "Markdown", 
+      ...getDashboardInlineKeyboard(user.language)
+    });
   });
 
   bot.on("message", async (msg) => {
-    if (msg.text && ["🇷🇺 Русский", "🇬🇧 English", "🇪🇸 Español", "🇵🇹 Português", "🇫🇷 Français", "🇾🇪 العربية"].includes(msg.text)) {
+    if (!msg.text) return;
+
+    const telegramId = msg.from?.id.toString();
+    if (!telegramId) return;
+    const user = await storage.getUserByTelegramId(telegramId);
+    if (!user) return;
+
+    const lang = user.language;
+
+    // Handle Reply Keyboard buttons
+    if (msg.text === t(lang, "earnings")) {
+      await handleEarnings(msg.chat.id, user);
+    } else if (msg.text === t(lang, "partners")) {
+      await handlePartners(msg.chat.id, user);
+    } else if (msg.text === t(lang, "account")) {
+      await handleAccount(msg.chat.id, user);
+    } else if (msg.text === t(lang, "promo")) {
+      bot?.sendMessage(msg.chat.id, "🎁 Promo section coming soon!");
+    } else if (msg.text === "📈 Advertise" || (lang && t(lang, "advertise") === msg.text)) {
+      bot?.sendMessage(msg.chat.id, "📈 Advertise section coming soon!");
+    } else if (msg.text === "❓ FAQ" || (lang && t(lang, "faq") === msg.text)) {
+      await handleFAQ(msg.chat.id, user);
+    }
+
+    if (["🇷🇺 Русский", "🇬🇧 English", "🇪🇸 Español", "🇵🇹 Português", "🇫🇷 Français", "🇾🇪 العربية"].includes(msg.text)) {
       const telegramId = msg.from?.id.toString();
       if (!telegramId) return;
       const user = await storage.getUserByTelegramId(telegramId);
@@ -890,7 +931,14 @@ ${t(lang, "miningTagline")}
 
     const lang = user.language;
 
-    if (query.data === "back_to_menu" || query.data === "refresh") {
+    if (query.data === "back_to_menu") {
+      const welcomeText = getDashboardText(lang, user.balance, getMiningRate(user.miningLevel, user.referralCount));
+      
+      bot?.sendMessage(chatId, welcomeText, { 
+        parse_mode: "Markdown", 
+        ...getDashboardInlineKeyboard(lang)
+      });
+    } else if (query.data === "refresh") {
       const now = Date.now();
       const lastClaim = user.lastClaimTime;
       const diffSeconds = (now - lastClaim) / 1000;
@@ -911,7 +959,7 @@ ${t(lang, "miningTagline")}
           chat_id: chatId,
           message_id: messageId,
           parse_mode: "Markdown",
-          reply_markup: getMainMenuKeyboard(lang).reply_markup
+          reply_markup: getDashboardInlineKeyboard(lang).reply_markup
         });
       } catch (e) {
         // Message might not have changed
@@ -987,100 +1035,20 @@ ${t(lang, "yourBalance")}: ${user.balance.toFixed(4)} TON
         chat_id: chatId,
         message_id: messageId,
         parse_mode: "Markdown",
-        reply_markup: getMainMenuKeyboard(lang).reply_markup
+        reply_markup: getDashboardInlineKeyboard(lang).reply_markup
       });
 
     } else if (query.data === "partners") {
-      const botUsername = (await bot?.getMe())?.username;
-      const referralLink = `https://t.me/${botUsername}?start=${telegramId}`;
-      
-      const bonusStatus = user.referralCount >= 1 ? "✅ ACTIVE" : "⏳ Invite 1+ friend";
-      const text = `
-${t(lang, "partnersTitle")}
-
-${t(lang, "partnersDesc")}
-• ${t(lang, "partnersReward").replace("{amount}", REFERRAL_REWARD.toString())}
-• ${t(lang, "partnersBonus")} ${bonusStatus}
-
-${t(lang, "referralLink")}
-\`${referralLink}\`
-
-${t(lang, "totalReferrals")}: ${user.referralCount}
-`;
-      const partnersKeyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "shareReferral"), callback_data: "share_referral" }],
-            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
-          ]
-        }
-      };
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: partnersKeyboard.reply_markup
-      });
-
-    } else if (query.data === "info") {
-      const text = `
-${t(lang, "infoTitle")}
-
-${t(lang, "infoWhat")}
-${t(lang, "infoWhatDesc")}
-
-${t(lang, "infoHow")}
-${t(lang, "infoStep1")}
-${t(lang, "infoStep2")}
-${t(lang, "infoStep3")}
-${t(lang, "infoStep4")}
-
-${t(lang, "infoNote")}
-`;
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: getBackButton(lang).reply_markup
-      });
-
+      await handlePartners(chatId, user, messageId);
     } else if (query.data === "earnings") {
-      const activeTasks = await storage.getActiveTasksForUser(user.id);
-      
-      if (activeTasks.length === 0) {
-        const text = `
-${t(lang, "earningsTitle")}
-
-${t(lang, "noTasks")}
-`;
-        bot?.editMessageText(text, {
-          chat_id: chatId,
-          message_id: messageId,
-          parse_mode: "Markdown",
-          reply_markup: getBackButton(lang).reply_markup
-        });
-      } else {
-        const text = `
-${t(lang, "earningsTitle")}
-
-${t(lang, "newTasks")}
-`;
-        const earningsKeyboard = {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: t(lang, "goToTasks"), callback_data: "task_list" }],
-              [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
-            ]
-          }
-        };
-        bot?.editMessageText(text, {
-          chat_id: chatId,
-          message_id: messageId,
-          parse_mode: "Markdown",
-          reply_markup: earningsKeyboard.reply_markup
-        });
-      }
-
+      await handleEarnings(chatId, user, messageId);
+    } else if (query.data === "account") {
+      await handleAccount(chatId, user, messageId);
+    } else if (query.data === "withdraw") {
+      await handleWithdraw(chatId, user, messageId);
+    } else if (query.data === "info") {
+      // Info button is removed from UI, but keep handler if needed for direct access
+      bot?.answerCallbackQuery(query.id, { text: "Section removed." });
     } else if (query.data === "task_list") {
       const activeTasks = await storage.getActiveTasksForUser(user.id);
       let text = `${t(lang, "taskList")}\n\n`;
@@ -1177,62 +1145,9 @@ ${t(lang, "channelTaskNote")}
       bot?.answerCallbackQuery(query.id, { text: t(lang, "verificationPending"), show_alert: true });
       
     } else if (query.data === "account") {
-      const notifStatus = (user as any).notificationsEnabled !== false;
-      const text = `
-${t(lang, "accountTitle")}
-
-${t(lang, "accountId")}: \`${telegramId}\`
-${t(lang, "accountLang")}: ${lang || 'en'}
-${t(lang, "accountReferrals")}: ${user.referralCount}
-${t(lang, "accountJoined")}: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}
-${t(lang, "accountLevel")}: ${user.miningLevel}
-${t(lang, "accountStatus")}: ${user.status.toUpperCase()}
-`;
-      const accountKeyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "language"), callback_data: "change_language" }],
-            [{ text: t(lang, "support"), callback_data: "support" }],
-            [{ text: notifStatus ? t(lang, "notificationOn") : t(lang, "notificationOff"), callback_data: "toggle_notification" }],
-            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
-          ]
-        }
-      };
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: accountKeyboard.reply_markup
-      });
-
+      await handleAccount(chatId, user, messageId);
     } else if (query.data === "withdraw") {
-      const minWithdraw = 0.5;
-      
-      const text = `
-${t(lang, "withdrawTitle")}
-
-${t(lang, "balance")}: ${user.balance.toFixed(4)} TON
-${t(lang, "minWithdraw")}: ${minWithdraw} TON
-`;
-      
-      const withdrawKeyboard = {
-        reply_markup: {
-          inline_keyboard: [
-             user.balance >= minWithdraw 
-             ? [{ text: t(lang, "requestWithdraw"), callback_data: "request_withdrawal" }]
-             : [{ text: t(lang, "insufficientBalance"), callback_data: "no_balance" }],
-             [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
-          ]
-        }
-      };
-
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: withdrawKeyboard.reply_markup
-      });
-
+      await handleWithdraw(chatId, user, messageId);
     } else if (query.data === "request_withdrawal") {
       bot?.sendMessage(chatId, t(lang, "enterWallet"), {
          reply_markup: { force_reply: true }
@@ -1336,6 +1251,8 @@ ${t(newLang, "accountStatus")}: ${user.status.toUpperCase()}
         reply_markup: accountKeyboard.reply_markup
       });
       
+    } else if (query.data === "faq") {
+      await handleFAQ(chatId, user, messageId);
     } else if (query.data === "support") {
       bot?.editMessageText(t(lang, "supportMessage"), {
         chat_id: chatId,
@@ -1352,34 +1269,161 @@ ${t(newLang, "accountStatus")}: ${user.status.toUpperCase()}
       await storage.updateUser(user.id, { notificationsEnabled: newStatus } as any);
       bot?.answerCallbackQuery(query.id, { text: t(lang, "notificationToggled"), show_alert: true });
       
-      const text = `
-${t(lang, "accountTitle")}
+      await handleAccount(chatId, user, messageId);
+    }
+  });
 
-${t(lang, "accountId")}: \`${telegramId}\`
-${t(lang, "accountLang")}: ${lang || 'en'}
-${t(lang, "accountReferrals")}: ${user.referralCount}
-${t(lang, "accountJoined")}: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}
-${t(lang, "accountLevel")}: ${user.miningLevel}
-${t(lang, "accountStatus")}: ${user.status.toUpperCase()}
+  // --- Handlers ---
+  async function handlePartners(chatId: number, user: any, messageId?: number) {
+    const lang = user.language;
+    const botUsername = (await bot?.getMe())?.username;
+    const referralLink = `https://t.me/${botUsername}?start=${user.telegramId}`;
+    
+    const bonusStatus = user.referralCount >= 1 ? "✅ ACTIVE" : "⏳ Invite 1+ friend";
+    const text = `
+${t(lang, "partnersTitle")}
+
+${t(lang, "partnersDesc")}
+• ${t(lang, "partnersReward").replace("{amount}", REFERRAL_REWARD.toString())}
+• ${t(lang, "partnersBonus")} ${bonusStatus}
+
+${t(lang, "referralLink")}
+\`${referralLink}\`
+
+${t(lang, "totalReferrals")}: ${user.referralCount}
 `;
-      const accountKeyboard = {
+    const partnersKeyboard = {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: t(lang, "shareReferral"), callback_data: "share_referral" }],
+          [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
+        ]
+      }
+    };
+    if (messageId) {
+      bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: partnersKeyboard.reply_markup });
+    } else {
+      bot?.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: partnersKeyboard.reply_markup });
+    }
+  }
+
+  async function handleEarnings(chatId: number, user: any, messageId?: number) {
+    const lang = user.language;
+    const activeTasks = await storage.getActiveTasksForUser(user.id);
+    
+    if (activeTasks.length === 0) {
+      const text = `${t(lang, "earningsTitle")}\n\n${t(lang, "noTasks")}`;
+      if (messageId) {
+        bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: getBackButton(lang).reply_markup });
+      } else {
+        bot?.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: getBackButton(lang).reply_markup });
+      }
+    } else {
+      const text = `${t(lang, "earningsTitle")}\n\n${t(lang, "newTasks")}`;
+      const earningsKeyboard = {
         reply_markup: {
           inline_keyboard: [
-            [{ text: t(lang, "language"), callback_data: "change_language" }],
-            [{ text: t(lang, "support"), callback_data: "support" }],
-            [{ text: newStatus ? t(lang, "notificationOn") : t(lang, "notificationOff"), callback_data: "toggle_notification" }],
+            [{ text: t(lang, "goToTasks"), callback_data: "task_list" }],
             [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
           ]
         }
       };
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: accountKeyboard.reply_markup
-      });
+      if (messageId) {
+        bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: earningsKeyboard.reply_markup });
+      } else {
+        bot?.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: earningsKeyboard.reply_markup });
+      }
     }
-  });
+  }
+
+  async function handleAccount(chatId: number, user: any, messageId?: number) {
+    const lang = user.language;
+    const notifStatus = (user as any).notificationsEnabled !== false;
+    // Format Date: MM/DD/YYYY
+    const joinedDate = new Date(user.createdAt || Date.now());
+    const formattedDate = `${joinedDate.getMonth() + 1}/${joinedDate.getDate()}/${joinedDate.getFullYear()}`;
+    
+    const text = `
+👤 *Account Info*
+
+📅 Joined: ${formattedDate}
+🆔 ID: ${user.telegramId}
+
+⚡ Level: ${user.miningLevel}
+💵 Balance: $ ${(user.balance * 2).toFixed(3)} (approx) / ${user.balance.toFixed(8)} TON
+
+👥 Referrals: ${user.referralCount}
+🗣️ Language: ${lang === 'en' ? '🇬🇧 English' : lang === 'ru' ? '🇷🇺 Русский' : lang}
+🟢 Status: ${user.status.toUpperCase()}
+`;
+    const accountKeyboard = {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "💵 Add funds", callback_data: "add_funds" }, { text: "🏦 Withdraw", callback_data: "withdraw" }],
+          [{ text: "🌎 Language", callback_data: "change_language" }],
+          [{ text: "📞 Support", callback_data: "support" }],
+          [{ text: notifStatus ? "🔔 Notification: ON" : "🔕 Notification: OFF", callback_data: "toggle_notification" }]
+        ]
+      }
+    };
+    if (messageId) {
+      bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: accountKeyboard.reply_markup });
+    } else {
+      bot?.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: accountKeyboard.reply_markup });
+    }
+  }
+
+  async function handleWithdraw(chatId: number, user: any, messageId?: number) {
+    const lang = user.language;
+    const minWithdraw = 0.5;
+    const text = `${t(lang, "withdrawTitle")}\n\n${t(lang, "balance")}: ${user.balance.toFixed(8)} TON\n${t(lang, "minWithdraw")}: ${minWithdraw} TON`;
+    const withdrawKeyboard = {
+      reply_markup: {
+        inline_keyboard: [
+           user.balance >= minWithdraw 
+           ? [{ text: t(lang, "requestWithdraw"), callback_data: "request_withdrawal" }]
+           : [{ text: t(lang, "insufficientBalance"), callback_data: "no_balance" }],
+           [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
+        ]
+      }
+    };
+    if (messageId) {
+      bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: withdrawKeyboard.reply_markup });
+    } else {
+      bot?.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: withdrawKeyboard.reply_markup });
+    }
+  }
+
+  async function handleFAQ(chatId: number, user: any, messageId?: number) {
+    const lang = user.language;
+    const text = `
+${t(lang, "faqTitle")}
+
+${t(lang, "faqDesc")}
+
+${t(lang, "faqQ1")}
+${t(lang, "faqA1")}
+
+${t(lang, "faqQ2")}
+${t(lang, "faqA2")}
+
+${t(lang, "faqQ3")}
+${t(lang, "faqA3")}
+
+${t(lang, "faqQ4")}
+${t(lang, "faqA4")}
+`;
+    const faqKeyboard = {
+      reply_markup: {
+        inline_keyboard: [[{ text: t(lang, "back"), callback_data: "back_to_menu" }]]
+      }
+    };
+    if (messageId) {
+      bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, parse_mode: "Markdown", reply_markup: faqKeyboard.reply_markup });
+    } else {
+      bot?.sendMessage(chatId, text, { parse_mode: "Markdown", reply_markup: faqKeyboard.reply_markup });
+    }
+  }
 
   console.log("Bot setup complete.");
 }

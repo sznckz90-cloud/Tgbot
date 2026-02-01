@@ -18,6 +18,7 @@ export const users = pgTable("users", {
   isPremium: boolean("is_premium").default(false),
   status: text("status").default("active").notNull(),
   language: text("language"),
+  notificationsEnabled: boolean("notifications_enabled").default(true).notNull(),
   isOnboarded: boolean("is_onboarded").default(false).notNull(),
   isVerified: boolean("is_verified").default(false).notNull(),
   verificationToken: text("verification_token"),

@@ -17,6 +17,12 @@ export const users = pgTable("users", {
   referralCount: integer("referral_count").default(0).notNull(),
   isPremium: boolean("is_premium").default(false),
   status: text("status").default("active").notNull(),
+  language: text("language"),
+  isOnboarded: boolean("is_onboarded").default(false).notNull(),
+  isVerified: boolean("is_verified").default(false).notNull(),
+  verificationToken: text("verification_token"),
+  verificationExpiresAt: timestamp("verification_expires_at"),
+  ipAddress: text("ip_address"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 

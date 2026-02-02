@@ -63,6 +63,7 @@ const translations: Record<string, Record<string, string>> = {
     infoStep4: "4. Withdraw earnings to your wallet.",
     infoNote: "⚠️ *Note:* This is a simulation bot.",
     infoEarnings: "💸 *Earnings & Tasks*",
+    earningsTitle: "💸 Earnings",
     noTasks: "Currently, there are no active tasks available.\nPlease check back later.",
     newTasks: "New tasks are available!\nComplete tasks and earn rewards.",
     goToTasks: "👉 Go to the task list 👈",
@@ -173,6 +174,7 @@ const translations: Record<string, Record<string, string>> = {
     infoStep4: "4. Выводите заработок на кошелёк.",
     infoNote: "⚠️ *Примечание:* Это симуляционный бот.",
     infoEarnings: "💸 *Заработок и задания*",
+    earningsTitle: "💸 Заработок",
     noTasks: "В данный момент нет активных заданий.\nПроверьте позже.",
     newTasks: "Доступны новые задания!\nВыполняйте и получайте награды.",
     goToTasks: "👉 Перейти к заданиям 👈",
@@ -235,35 +237,36 @@ function t(lang: string | null | undefined, key: string): string {
 
 // Constants
 const MINING_SPEEDS: Record<number, number> = {
-  1: 0.0000025,
-  2: 0.0000075,
-  3: 0.0000175,
-  4: 0.0000375,
-  5: 0.0000775,
-  6: 0.0001375,
-  7: 0.0002175,
-  8: 0.0003175,
-  9: 0.0005175,
-  10: 0.0008175,
-  11: 0.0012175,
-  12: 0.0017175,
-  13: 0.0027175,
+  1: 0.0000001,
+  2: 0.0000025,
+  3: 0.0000075,
+  4: 0.0000175,
+  5: 0.0000375,
+  6: 0.0000775,
+  7: 0.0001375,
+  8: 0.0002175,
+  9: 0.0003175,
+  10: 0.0005175,
+  11: 0.0008175,
+  12: 0.0012175,
+  13: 0.0017175,
+  14: 0.0027175,
 };
 
 const UPGRADE_COSTS: Record<number, number> = {
-  1: 0.5,
-  2: 1,
-  3: 2,
-  4: 4,
-  5: 8,
-  6: 12,
-  7: 16,
-  8: 20,
-  9: 40,
-  10: 60,
-  11: 80,
-  12: 100,
-  13: 200,
+  2: 0.5,
+  3: 1,
+  4: 2,
+  5: 4,
+  6: 8,
+  7: 12,
+  8: 16,
+  9: 20,
+  10: 40,
+  11: 60,
+  12: 80,
+  13: 100,
+  14: 200,
 };
 
 const REFERRAL_REWARD = 0.008;
@@ -425,7 +428,7 @@ export function setupBot() {
 ${t(lang, "dashboard")}
 
 ${t(lang, "balance")}: ${balance.toFixed(8)} TON
-${t(lang, "miningSpeed")}: ${miningRate} TON / 5 seconds
+${t(lang, "miningSpeed")}: ${miningRate.toFixed(7)} TON / 5 seconds
 
 ${t(lang, "miningTagline")}
 `;
@@ -467,6 +470,8 @@ ${t(lang, "miningTagline")}
     bot?.sendMessage(chatId, welcomeText, { parse_mode: "Markdown", ...getMainMenuKeyboard(user.language) });
   });
 
+  const TASK_CHANNEL_ID = "-1002480439556";
+
   bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
     const telegramId = msg.from?.id.toString();
@@ -474,6 +479,48 @@ ${t(lang, "miningTagline")}
     const user = await storage.getUserByTelegramId(telegramId);
     if (!user) return;
     const lang = user.language;
+
+    // Handle forwarded bot messages for promotion (NO REPLY MODE)
+    if (msg.forward_from && msg.forward_from.is_bot && user.status === "awaiting_bot_forward") {
+      const botUsername = msg.forward_from.username;
+      const botName = msg.forward_from.first_name || botUsername;
+      const cost = 0.250;
+      
+      if (user.balance < cost) {
+        bot?.sendMessage(chatId, t(lang, "insufficientFunds"));
+        await storage.updateUser(user.id, { status: "active" } as any);
+        return;
+      }
+
+      await storage.updateUser(user.id, { balance: user.balance - cost, status: "active" } as any);
+      
+      const myBot = await bot?.getMe();
+      const referralLink = `https://t.me/${myBot?.username}?start=${telegramId}`;
+      const botLink = `https://t.me/${botUsername}`;
+      
+      await storage.createTask({
+        type: "bot",
+        title: `Start @${botUsername}`,
+        description: `Start the bot to earn reward`,
+        reward: 0.0001,
+        link: botLink,
+        creatorId: user.id,
+        maxCompletions: 1000,
+        currentCompletions: 0,
+        isActive: true
+      });
+
+      // Auto publish to channel
+      const channelMessage = `🤖 *New Bot Task*\n\n📌 Start @${botUsername}\n💰 Reward: 0.0001 TON\n👥 Limit: 1000 users\n\n🔗 Referral: ${referralLink}`;
+      try {
+        await bot?.sendMessage(TASK_CHANNEL_ID, channelMessage, { parse_mode: "Markdown" });
+      } catch (e) {
+        console.error("Failed to post to channel:", e);
+      }
+
+      bot?.sendMessage(chatId, t(lang, "taskPublished"), { parse_mode: "Markdown" });
+      return;
+    }
 
     // Handle replies for advertising
     if (msg.reply_to_message) {
@@ -490,6 +537,10 @@ ${t(lang, "miningTagline")}
           }
 
           await storage.updateUser(user.id, { balance: user.balance - cost });
+          
+          const myBot = await bot?.getMe();
+          const referralLink = `https://t.me/${myBot?.username}?start=${telegramId}`;
+          
           await storage.createTask({
             type: "channel",
             title: `Join ${url}`,
@@ -502,6 +553,14 @@ ${t(lang, "miningTagline")}
             isActive: true
           });
 
+          // Auto publish to channel
+          const channelMessage = `📢 *New Channel Task*\n\n📌 Join ${url}\n💰 Reward: 0.0001 TON\n👥 Limit: 1000 users\n\n🔗 Referral: ${referralLink}`;
+          try {
+            await bot?.sendMessage(TASK_CHANNEL_ID, channelMessage, { parse_mode: "Markdown" });
+          } catch (e) {
+            console.error("Failed to post to channel:", e);
+          }
+
           bot?.sendMessage(chatId, t(lang, "taskPublished"), { parse_mode: "Markdown" });
         } else {
           bot?.sendMessage(chatId, "❌ Invalid URL. Please try again.");
@@ -509,7 +568,7 @@ ${t(lang, "miningTagline")}
         return;
       }
 
-      // Bot Forward Promotion
+      // Legacy Bot Forward Promotion (fallback)
       if (replyText === t(lang, "forwardBotMsg")) {
         if (msg.forward_from && msg.forward_from.is_bot) {
           const botUser = msg.forward_from.username;
@@ -591,8 +650,7 @@ ${t(lang, "miningTagline")}
       const keyboard = {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "📢 Channel", callback_data: "promo_channel_info" }],
-            [{ text: "🤖 Bots", callback_data: "promo_bot_info" }],
+            [{ text: "📢 Channel", callback_data: "advertise_channel" }, { text: "🤖 Bots", callback_data: "advertise_bot" }],
             [{ text: t(lang, "myTasks"), callback_data: "my_tasks" }],
             [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
           ]
@@ -605,7 +663,7 @@ ${t(lang, "miningTagline")}
         reply_markup: keyboard.reply_markup
       });
 
-    } else if (query.data === "promo_channel_info") {
+    } else if (query.data === "advertise_channel") {
       const text = t(lang, "channelPromoInfo").replace("{botUsername}", (await bot?.getMe())?.username || "bot");
       const keyboard = {
         reply_markup: {
@@ -622,13 +680,12 @@ ${t(lang, "miningTagline")}
         reply_markup: keyboard.reply_markup
       });
 
-    } else if (query.data === "promo_bot_info") {
-      const text = t(lang, "botPromoInfo");
+    } else if (query.data === "advertise_bot") {
+      const text = `📌 Forward ANY message from the bot you want to promote here for verification.`;
       const keyboard = {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "🤖 Start Bot Promotion", callback_data: "promo_bot_start" }],
-            [{ text: t(lang, "back"), callback_data: "advertise_menu" }]
+            [{ text: "❌ Cancel", callback_data: "advertise_menu" }]
           ]
         }
       };
@@ -638,13 +695,10 @@ ${t(lang, "miningTagline")}
         parse_mode: "Markdown",
         reply_markup: keyboard.reply_markup
       });
+      await storage.updateUser(user.id, { status: "awaiting_bot_forward" } as any);
 
     } else if (query.data === "promo_channel_start") {
       bot?.sendMessage(chatId, t(lang, "enterChannelUrl"), { reply_markup: { force_reply: true } });
-      bot?.answerCallbackQuery(query.id);
-
-    } else if (query.data === "promo_bot_start") {
-      bot?.sendMessage(chatId, t(lang, "forwardBotMsg"), { reply_markup: { force_reply: true } });
       bot?.answerCallbackQuery(query.id);
 
     } else if (query.data === "my_tasks") {
@@ -809,10 +863,11 @@ ${t(lang, "referralLink")}
 
 ${t(lang, "totalReferrals")}: ${user.referralCount}
 `;
+      const shareMessage = t(lang, "shareReferralMessage").replace("{link}", referralLink);
       const partnersKeyboard = {
         reply_markup: {
           inline_keyboard: [
-            [{ text: t(lang, "shareReferral"), callback_data: "share_referral" }],
+            [{ text: t(lang, "shareReferral"), switch_inline_query: shareMessage }],
             [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
           ]
         }
@@ -980,22 +1035,26 @@ ${t(lang, "channelTaskNote")}
       
     } else if (query.data === "account") {
       const notifStatus = (user as any).notificationsEnabled !== false;
+      const langDisplay = lang === 'ru' ? '🇷🇺 Русский' : '🇬🇧 English';
       const text = `
 ${t(lang, "accountTitle")}
 
-${t(lang, "accountId")}: \`${telegramId}\`
-${t(lang, "accountLang")}: ${lang || 'en'}
-${t(lang, "accountReferrals")}: ${user.referralCount}
-${t(lang, "accountJoined")}: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}
-${t(lang, "accountLevel")}: ${user.miningLevel}
-${t(lang, "accountStatus")}: ${user.status.toUpperCase()}
+📅 Joined: ${new Date(user.createdAt || Date.now()).toLocaleDateString()}
+🆔 ID: \`${telegramId}\`
+
+⚡ Level: ${user.miningLevel}
+💎 Balance: ${user.balance.toFixed(3)}
+
+👥 Referrals: ${user.referralCount}
+🗣️ Language: ${langDisplay}
 `;
       const accountKeyboard = {
         reply_markup: {
           inline_keyboard: [
-            [{ text: t(lang, "language"), callback_data: "change_language" }],
-            [{ text: t(lang, "support"), callback_data: "support" }],
-            [{ text: notifStatus ? t(lang, "notificationOn") : t(lang, "notificationOff"), callback_data: "toggle_notification" }],
+            [{ text: "💵 Add funds", callback_data: "add_funds" }],
+            [{ text: "🌎 Change Language", callback_data: "change_language" }],
+            [{ text: "📞 Support", callback_data: "support" }],
+            [{ text: notifStatus ? "🔔 Notification settings" : "🔕 Notification settings", callback_data: "toggle_notification" }],
             [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
           ]
         }
@@ -1086,6 +1145,25 @@ ${t(lang, "minWithdraw")}: ${minWithdraw} TON
         reply_markup: getBackButton(lang).reply_markup
       });
 
+    } else if (query.data === "add_funds") {
+      const text = `
+💵 *Add Funds*
+
+To deposit TON to your account, send your desired amount to:
+
+\`YOUR_TON_WALLET_ADDRESS_HERE\`
+
+After sending, your balance will be updated automatically.
+
+⚠️ Minimum deposit: 0.1 TON
+`;
+      bot?.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        reply_markup: getBackButton(lang).reply_markup
+      });
+
     } else if (query.data === "toggle_notification") {
       const current = (user as any).notificationsEnabled !== false;
       await storage.updateUser(user.id, { notificationsEnabled: !current } as any);
@@ -1097,9 +1175,10 @@ ${t(lang, "minWithdraw")}: ${minWithdraw} TON
           const accountKeyboard = {
             reply_markup: {
               inline_keyboard: [
-                [{ text: t(lang, "language"), callback_data: "change_language" }],
-                [{ text: t(lang, "support"), callback_data: "support" }],
-                [{ text: isEn ? t(lang, "notificationOn") : t(lang, "notificationOff"), callback_data: "toggle_notification" }],
+                [{ text: "💵 Add funds", callback_data: "add_funds" }],
+                [{ text: "🌎 Change Language", callback_data: "change_language" }],
+                [{ text: "📞 Support", callback_data: "support" }],
+                [{ text: isEn ? "🔔 Notification settings" : "🔕 Notification settings", callback_data: "toggle_notification" }],
                 [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
               ]
             }

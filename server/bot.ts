@@ -308,15 +308,21 @@ export function setupBot() {
     return;
   }
 
-  if (isPolling && botInstance) {
-    console.log("Bot is already running, skipping duplicate initialization");
-    return;
+  if (botInstance) {
+    console.log("Stopping existing bot instance...");
+    try {
+      botInstance.stopPolling();
+    } catch (e) {
+      console.error("Error stopping bot:", e);
+    }
+    botInstance = null;
+    isPolling = false;
   }
 
   try {
     bot = new TelegramBot(token, { 
       polling: {
-        interval: 300,
+        interval: 1000,
         autoStart: true,
         params: {
           timeout: 10
@@ -641,17 +647,19 @@ from that bot here for verification.`;
         const channelUsername = channelMatch[1];
         const cost = 0.250;
         
-        // Normal users must pay 0.250 TON, Admin (6653616672) pays 0
-        const isFree = isAdmin(telegramId);
+        const isFree = isSuperAdmin(telegramId);
         const actualCost = isFree ? 0 : cost;
 
         if (!isFree && user.balance < actualCost) {
-          bot?.sendMessage(chatId, t(lang_msg, "insufficientFunds"));
+          bot?.sendMessage(chatId, t(user.language, "insufficientFunds"));
           await storage.updateUser(user.id, { status: "active" } as any);
           return;
         }
 
-        await storage.updateUser(user.id, { balance: user.balance - actualCost, status: "active" } as any);
+        await storage.updateUser(user.id, { 
+          balance: user.balance - actualCost, 
+          status: "active" 
+        } as any);
         
         const myBot = await bot?.getMe();
         const channelLink = `https://t.me/${channelUsername}`;
@@ -660,7 +668,7 @@ from that bot here for verification.`;
           type: "channel",
           title: `Subscribe to the Channel`,
           description: `Join the channel and stay subscribed`,
-          reward: 0.05, // Users get 0.05 per join, advertiser pays 0.250
+          reward: 0.05,
           link: channelLink,
           targetBotUsername: channelUsername,
           creatorId: user.id,
@@ -669,16 +677,15 @@ from that bot here for verification.`;
           isActive: true
         });
 
-        // Auto publish to channel
         const taskLink = `https://t.me/${myBot?.username}?start=task_${task.id}`;
-        const channelMessage = t(lang_msg, "adminChannelPost");
+        const channelMessage = t(user.language, "adminChannelPost");
         
         try {
           await bot?.sendMessage(TASK_CHANNEL_ID, channelMessage, { 
             parse_mode: "Markdown",
             reply_markup: {
               inline_keyboard: [
-                [{ text: t(lang, "claimReward"), url: taskLink }]
+                [{ text: t(user.language, "claimReward"), url: taskLink }]
               ]
             }
           });
@@ -686,7 +693,7 @@ from that bot here for verification.`;
           console.error("Failed to post to channel:", e);
         }
 
-        bot?.sendMessage(chatId, t(lang, "taskPublished"), { parse_mode: "Markdown" });
+        bot?.sendMessage(chatId, t(user.language, "taskPublished"), { parse_mode: "Markdown" });
         return;
       } else {
         bot?.sendMessage(chatId, "❌ Invalid URL. Please send a valid URL like https://t.me/channelname");
@@ -694,7 +701,38 @@ from that bot here for verification.`;
       }
     }
 
-    // Handle bot URL input for promotion
+    if (msg.text && user.status === "awaiting_promo") {
+      const code = msg.text.trim();
+      const promo = await storage.getPromoCode(code);
+      
+      if (!promo) {
+        bot?.sendMessage(chatId, t(user.language, "promoNotFound"));
+        await storage.updateUser(user.id, { status: "active" } as any);
+        return;
+      }
+
+      const hasUsed = await storage.hasUserUsedPromo(user.id, promo.id);
+      if (hasUsed) {
+        bot?.sendMessage(chatId, t(user.language, "promoAlreadyUsed"));
+        await storage.updateUser(user.id, { status: "active" } as any);
+        return;
+      }
+
+      if (promo.currentUsage >= promo.usageLimit) {
+        bot?.sendMessage(chatId, t(user.language, "promoLimitReached"));
+        await storage.updateUser(user.id, { status: "active" } as any);
+        return;
+      }
+
+      await storage.usePromoCode(user.id, promo.id);
+      await storage.updateUser(user.id, { 
+        balance: user.balance + parseFloat(promo.reward.toString()),
+        status: "active"
+      } as any);
+
+      bot?.sendMessage(chatId, t(user.language, "promoSuccess").replace("{reward}", promo.reward.toString()));
+      return;
+    }
     if (msg.text && user.status === "awaiting_bot_url") {
       const text = msg.text.trim();
       const botUrlMatch = text.match(/(?:https?:\/\/)?t\.me\/([a-zA-Z0-9_]+)/i);
@@ -703,13 +741,17 @@ from that bot here for verification.`;
         const botUsername = botUrlMatch[1];
         const cost = 0.250;
         
-        if (user.balance < cost) {
-          bot?.sendMessage(chatId, t(lang, "insufficientFunds"));
+        const isSuper = isSuperAdmin(user.telegramId);
+        if (!isSuper && user.balance < cost) {
+          bot?.sendMessage(chatId, t(user.language, "insufficientFunds"));
           await storage.updateUser(user.id, { status: "active" } as any);
           return;
         }
 
-        await storage.updateUser(user.id, { balance: user.balance - cost, status: "active" } as any);
+        if (!isSuper) {
+          await storage.updateUser(user.id, { balance: user.balance - cost });
+        }
+        await storage.updateUser(user.id, { status: "active" } as any);
         
         const myBot = await bot?.getMe();
         const botLink = `https://t.me/${botUsername}`;
@@ -750,7 +792,7 @@ from that bot here for verification.`;
           console.error("Failed to post to channel:", e);
         }
 
-        bot?.sendMessage(chatId, t(lang, "taskPublished"), { parse_mode: "Markdown" });
+        bot?.sendMessage(chatId, t(user.language, "taskPublished"), { parse_mode: "Markdown" });
         return;
       } else {
         bot?.sendMessage(chatId, "❌ Invalid bot URL. Please send a valid URL like https://t.me/your_bot");
@@ -1000,7 +1042,7 @@ from that bot here for verification.`;
 
     if (query.data === "promo_entry" || query.data === "promo") {
       console.log(`[PROMO] Promo button clicked by ${telegramId}`);
-      bot?.sendMessage(chatId, t(lang_cb, "enterPromo"), { reply_markup: { force_reply: true } });
+      bot?.sendMessage(chatId, t(lang_cb, "enterPromoCode"), { reply_markup: { force_reply: true } });
       bot?.answerCallbackQuery(query.id);
       return;
     }
@@ -1123,6 +1165,7 @@ from that bot here for verification.`;
       }
 
     } else if (query.data === "back_to_menu") {
+      await storage.updateUser(user.id, { status: "active" } as any);
       const text = getDashboardText(lang_cb, user.balance, getMiningRate(user.miningLevel, user.referralCount));
       bot?.editMessageText(text, {
         chat_id: chatId,
@@ -1132,11 +1175,13 @@ from that bot here for verification.`;
       });
       return;
     } else if (query.data === "promo_entry") {
-      bot?.sendMessage(chatId, t(lang_cb, "enterPromoCode"), {
+      await storage.updateUser(user.id, { status: "awaiting_promo" } as any);
+      bot?.sendMessage(chatId, t(lang_cb, "enterPromo"), {
         reply_markup: {
           force_reply: true
         }
       });
+      bot?.answerCallbackQuery(query.id);
       return;
     } else if (query.data.startsWith("verify_channel_task_")) {
       const taskId = parseInt(query.data.split("_")[3]);
@@ -1203,7 +1248,9 @@ from that bot here for verification.`;
       });
       return;
     } else if (query.data === "advertise_menu") {
-      const text = t(lang, "advertiseMenu");
+      await storage.updateUser(user.id, { status: "active" } as any);
+      const lang_cb = user.language;
+      const text = t(lang_cb, "advertiseMenu");
       const keyboard = {
         reply_markup: {
           inline_keyboard: [

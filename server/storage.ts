@@ -1,4 +1,4 @@
-import { users, withdrawals, tasks, userTasks, type User, type InsertUser, type Withdrawal, type InsertWithdrawal, type Task, type InsertTask, type UserTask, type InsertUserTask } from "@shared/schema";
+import { users, withdrawals, tasks, userTasks, promoCodes, userPromoCodes, type User, type InsertUser, type Withdrawal, type InsertWithdrawal, type Task, type InsertTask, type UserTask, type InsertUserTask, type PromoCode, type InsertPromoCode } from "@shared/schema";
 import { db } from "./db";
 import { eq, sql, desc, and, notInArray } from "drizzle-orm";
 
@@ -22,6 +22,10 @@ export interface IStorage {
   getTasksByCreator(creatorId: number): Promise<Task[]>;
   incrementTaskCompletion(taskId: number): Promise<void>;
   getPendingUserTask(userId: number): Promise<UserTask | undefined>;
+  getPromoCode(code: string): Promise<PromoCode | undefined>;
+  hasUserUsedPromo(userId: number, promoId: number): Promise<boolean>;
+  recordPromoUsage(userId: number, promoId: number): Promise<void>;
+  createPromoCode(promo: InsertPromoCode): Promise<PromoCode>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -159,6 +163,33 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(userTasks.userId, userId), eq(userTasks.status, "pending")))
       .limit(1);
     return ut;
+  }
+
+  async getPromoCode(code: string): Promise<PromoCode | undefined> {
+    const [promo] = await db.select().from(promoCodes).where(eq(promoCodes.code, code));
+    return promo;
+  }
+
+  async hasUserUsedPromo(userId: number, promoId: number): Promise<boolean> {
+    const [usage] = await db.select().from(userPromoCodes).where(and(
+      eq(userPromoCodes.userId, userId),
+      eq(userPromoCodes.promoCodeId, promoId)
+    ));
+    return !!usage;
+  }
+
+  async recordPromoUsage(userId: number, promoId: number): Promise<void> {
+    await db.transaction(async (tx) => {
+      await tx.insert(userPromoCodes).values({ userId, promoCodeId: promoId });
+      await tx.update(promoCodes)
+        .set({ currentUsage: sql`${promoCodes.currentUsage} + 1` })
+        .where(eq(promoCodes.id, promoId));
+    });
+  }
+
+  async createPromoCode(insertPromo: InsertPromoCode): Promise<PromoCode> {
+    const [promo] = await db.insert(promoCodes).values(insertPromo).returning();
+    return promo;
   }
 }
 

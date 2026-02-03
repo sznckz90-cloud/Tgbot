@@ -555,6 +555,16 @@ from that bot here for verification.`;
 
   const TASK_CHANNEL_ID = "-1002480439556";
   const ADMIN_ID = "6653616672";
+  const SUPER_ADMIN_ID = process.env.SUPER_ADMIN_ID || ADMIN_ID; // Fallback to ADMIN_ID if not set
+
+  function isAdmin(telegramId: string | undefined) {
+    if (!telegramId) return false;
+    const isSpecial = telegramId === ADMIN_ID || telegramId === SUPER_ADMIN_ID;
+    if (isSpecial) {
+      console.log(`[ADMIN] Authorized access for user ${telegramId}`);
+    }
+    return isSpecial;
+  }
 
   bot.on("message", async (msg) => {
     const chatId = msg.chat.id;
@@ -574,10 +584,10 @@ from that bot here for verification.`;
         const cost = 0.250;
         
         // Normal users must pay 0.250 TON, Admin (6653616672) pays 0
-        const isFree = telegramId === ADMIN_ID;
+        const isFree = isAdmin(telegramId);
         const actualCost = isFree ? 0 : cost;
 
-        if (user.balance < actualCost) {
+        if (!isFree && user.balance < actualCost) {
           bot?.sendMessage(chatId, t(lang, "insufficientFunds"));
           await storage.updateUser(user.id, { status: "active" } as any);
           return;
@@ -894,12 +904,13 @@ from that bot here for verification.`;
     }
     const lang = user.language;
 
-    if (query.data === "advertise_menu") {
+    if (query.data === "promo") {
+      console.log(`[ADMIN] Promo button clicked by ${telegramId}`);
       const text = t(lang, "advertiseMenu");
       const keyboard = {
         reply_markup: {
           inline_keyboard: [
-            [{ text: t(lang, "advertiseChannel"), callback_data: "advertise_channel" }, { text: t(lang, "advertiseBots"), callback_data: "advertise_bot" }],
+            [{ text: t(lang, "advertiseChannel"), callback_data: "promo_channel" }, { text: t(lang, "advertiseBots"), callback_data: "advertise_bot" }],
             [{ text: t(lang, "myTasks"), callback_data: "my_tasks" }],
             [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
           ]
@@ -912,20 +923,17 @@ from that bot here for verification.`;
         reply_markup: keyboard.reply_markup
       });
 
-    } else if (query.data === "advertise_channel") {
-      const text = t(lang, "channelPromoInfo").replace("{botUsername}", (await bot?.getMe())?.username || "bot");
-      const keyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "back"), callback_data: "advertise_menu" }]
-          ]
-        }
-      };
+    } else if (query.data === "promo_channel") {
+      console.log(`[ADMIN] Channel button clicked by ${telegramId}`);
+      const botMe = await bot?.getMe();
+      const text = t(lang, "channelPromoInfo").replace("{botUsername}", botMe?.username || "bot");
       bot?.editMessageText(text, {
         chat_id: chatId,
         message_id: messageId,
         parse_mode: "Markdown",
-        reply_markup: keyboard.reply_markup
+        reply_markup: {
+          inline_keyboard: [[{ text: t(lang, "back"), callback_data: "advertise_menu" }]]
+        }
       });
       await storage.updateUser(user.id, { status: "awaiting_channel_url" } as any);
 
@@ -970,12 +978,15 @@ from that bot here for verification.`;
     } else if (query.data.startsWith("publish_bot_")) {
       const botUser = query.data.split("_")[2];
       const cost = 0.250;
-      if (user.balance < cost) {
+      // Admin & Super Admin skip balance check
+      if (!isAdmin(user.telegramId) && user.balance < cost) {
         bot?.answerCallbackQuery(query.id, { text: t(lang, "insufficientFunds"), show_alert: true });
         return;
       }
 
-      await storage.updateUser(user.id, { balance: user.balance - cost });
+      if (!isAdmin(user.telegramId)) {
+        await storage.updateUser(user.id, { balance: user.balance - cost });
+      }
       await storage.createTask({
         type: "bot",
         title: `Start @${botUser}`,
@@ -996,87 +1007,6 @@ from that bot here for verification.`;
       });
 
     } else if (query.data === "advertise_menu") {
-      const text = t(lang, "advertiseMenu");
-      const keyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "advertiseChannel"), callback_data: "promo_channel" }],
-            [{ text: t(lang, "advertiseBots"), callback_data: "promo_bot" }],
-            [{ text: t(lang, "myTasks"), callback_data: "my_tasks" }],
-            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
-          ]
-        }
-      };
-      bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, ...keyboard, parse_mode: "Markdown" });
-
-    } else if (query.data === "promo_channel") {
-      const botMe = await bot?.getMe();
-      const text = t(lang, "channelPromoInfo").replace("{botUsername}", botMe?.username || "bot");
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [[{ text: t(lang, "back"), callback_data: "advertise_menu" }]]
-        }
-      });
-      await storage.updateUser(user.id, { status: "awaiting_channel_url" });
-
-    } else if (query.data === "advertise_menu") {
-      const text = t(lang, "advertiseMenu");
-      const keyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "advertiseChannel"), callback_data: "promo_channel" }],
-            [{ text: t(lang, "advertiseBots"), callback_data: "promo_bot" }],
-            [{ text: t(lang, "myTasks"), callback_data: "my_tasks" }],
-            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
-          ]
-        }
-      };
-      bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, ...keyboard, parse_mode: "Markdown" });
-
-    } else if (query.data === "promo_channel") {
-      const botMe = await bot?.getMe();
-      const text = t(lang, "channelPromoInfo").replace("{botUsername}", botMe?.username || "bot");
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [[{ text: t(lang, "back"), callback_data: "advertise_menu" }]]
-        }
-      });
-      await storage.updateUser(user.id, { status: "awaiting_channel_url" });
-
-    } else if (query.data === "advertise_menu") {
-      const text = t(lang, "advertiseMenu");
-      const keyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "advertiseChannel"), callback_data: "promo_channel" }],
-            [{ text: t(lang, "advertiseBots"), callback_data: "promo_bot" }],
-            [{ text: t(lang, "myTasks"), callback_data: "my_tasks" }],
-            [{ text: t(lang, "back"), callback_data: "back_to_menu" }]
-          ]
-        }
-      };
-      bot?.editMessageText(text, { chat_id: chatId, message_id: messageId, ...keyboard, parse_mode: "Markdown" });
-
-    } else if (query.data === "promo_channel") {
-      const botMe = await bot?.getMe();
-      const text = t(lang, "channelPromoInfo").replace("{botUsername}", botMe?.username || "bot");
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [[{ text: t(lang, "back"), callback_data: "advertise_menu" }]]
-        }
-      });
-      await storage.updateUser(user.id, { status: "awaiting_channel_url" });
-
-    } else if (query.data === "back_to_menu" || query.data === "refresh") {
       const now = Date.now();
       const lastClaim = user.lastClaimTime;
       const diffSeconds = (now - lastClaim) / 1000;

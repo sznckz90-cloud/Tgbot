@@ -27,6 +27,24 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const promoCodes = pgTable("promo_codes", {
+  id: serial("id").primaryKey(),
+  code: text("code").notNull().unique(),
+  reward: real("reward").notNull(),
+  expiryDate: timestamp("expiry_date"),
+  usageLimit: integer("usage_limit").default(1),
+  currentUsage: integer("current_usage").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const userPromoCodes = pgTable("user_promo_codes", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  promoCodeId: integer("promo_code_id").references(() => promoCodes.id).notNull(),
+  usedAt: timestamp("used_at").defaultNow(),
+});
+
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
   type: text("type").notNull(), // 'channel', 'bot'
@@ -64,6 +82,22 @@ export const withdrawals = pgTable("withdrawals", {
 export const usersRelations = relations(users, ({ many }) => ({
   withdrawals: many(withdrawals),
   userTasks: many(userTasks),
+  userPromoCodes: many(userPromoCodes),
+}));
+
+export const promoCodesRelations = relations(promoCodes, ({ many }) => ({
+  userPromoCodes: many(userPromoCodes),
+}));
+
+export const userPromoCodesRelations = relations(userPromoCodes, ({ one }) => ({
+  user: one(users, {
+    fields: [userPromoCodes.userId],
+    references: [users.id],
+  }),
+  promoCode: one(promoCodes, {
+    fields: [userPromoCodes.promoCodeId],
+    references: [promoCodes.id],
+  }),
 }));
 
 export const tasksRelations = relations(tasks, ({ many }) => ({
@@ -93,6 +127,8 @@ export const insertUserSchema = createInsertSchema(users).omit({ id: true, creat
 export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, createdAt: true });
 export const insertUserTaskSchema = createInsertSchema(userTasks).omit({ id: true, createdAt: true });
 export const insertWithdrawalSchema = createInsertSchema(withdrawals).omit({ id: true, createdAt: true });
+export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({ id: true, createdAt: true });
+export const insertUserPromoCodeSchema = createInsertSchema(userPromoCodes).omit({ id: true, createdAt: true });
 
 // === TYPES ===
 export type User = typeof users.$inferSelect;
@@ -103,3 +139,7 @@ export type UserTask = typeof userTasks.$inferSelect;
 export type InsertUserTask = z.infer<typeof insertUserTaskSchema>;
 export type Withdrawal = typeof withdrawals.$inferSelect;
 export type InsertWithdrawal = z.infer<typeof insertWithdrawalSchema>;
+export type PromoCode = typeof promoCodes.$inferSelect;
+export type InsertPromoCode = z.infer<typeof insertPromoCodeSchema>;
+export type UserPromoCode = typeof userPromoCodes.$inferSelect;
+export type InsertUserPromoCode = z.infer<typeof insertUserPromoCodeSchema>;

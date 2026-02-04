@@ -1090,12 +1090,12 @@ from that bot here for verification.`;
       bot?.answerCallbackQuery(query.id);
 
     } else if (query.data === "my_tasks") {
-      const userTasks = await storage.getTasksByCreator(user.id);
+      const creatorTasks = await storage.getTasksByCreator(user.id);
       let text = t(lang_cb, "myTasks") + "\n\n";
-      if (userTasks.length === 0) {
+      if (creatorTasks.length === 0) {
         text += t(lang_cb, "noTasks");
       } else {
-        userTasks.forEach(task => {
+        creatorTasks.forEach(task => {
           text += `📌 *${task.title}*\nStatus: ${task.isActive ? "Active" : "Completed"}\nCompletions: ${task.currentCompletions}/${task.maxCompletions}\n\n`;
         });
       }
@@ -1105,6 +1105,7 @@ from that bot here for verification.`;
         parse_mode: "Markdown",
         reply_markup: getBackButton(lang_cb).reply_markup
       });
+      return;
 
     } else if (query.data.startsWith("publish_bot_")) {
       const botUser = query.data.split("_")[2];
@@ -1175,7 +1176,7 @@ from that bot here for verification.`;
       });
       return;
     } else if (query.data === "promo_entry") {
-      await storage.updateUser(user.id, { status: "awaiting_promo" } as any);
+      await storage.updateUser(user.id, { status: "entering_promo" } as any);
       bot?.sendMessage(chatId, t(lang_cb, "enterPromo"), {
         reply_markup: {
           force_reply: true
@@ -1220,8 +1221,9 @@ from that bot here for verification.`;
       bot?.sendMessage(chatId, t(lang, "forwardBotMsg"), { reply_markup: { force_reply: true } });
       return;
     } else if (query.data === "promo_channel") {
-      const channelUrl = "https://t.me/+fT73V4A1E-FjMDli"; // Fixed Telegram channel link
-      const text = t(lang, "channelPromoInfo").replace("{botUsername}", (await bot?.getMe())?.username || "bot");
+      const lang = user.language || 'en';
+      const channelUrl = "https://t.me/your_channel_link"; // Use the main channel link
+      const text = t(lang, "missionChannel");
       bot?.editMessageText(text, {
         chat_id: chatId,
         message_id: messageId,
@@ -1229,12 +1231,14 @@ from that bot here for verification.`;
         reply_markup: {
           inline_keyboard: [
             [{ text: t(lang, "advertiseChannel"), url: channelUrl }],
+            [{ text: t(lang, "joined"), callback_data: "check_subscription" }],
             [{ text: t(lang, "back"), callback_data: "advertise_menu" }]
           ]
         }
       });
       return;
     } else if (query.data === "promo_bot") {
+      const lang = user.language || 'en';
       const text = t(lang, "botPromoInfo");
       bot?.editMessageText(text, {
         chat_id: chatId,
@@ -1249,8 +1253,8 @@ from that bot here for verification.`;
       return;
     } else if (query.data === "advertise_menu") {
       await storage.updateUser(user.id, { status: "active" } as any);
-      const lang_cb = user.language;
-      const text = t(lang_cb, "advertiseMenu");
+      const lang = user.language || 'en';
+      const text = t(lang, "advertiseMenu");
       const keyboard = {
         reply_markup: {
           inline_keyboard: [
@@ -1269,6 +1273,7 @@ from that bot here for verification.`;
 
     } else if (query.data === "promo") {
       console.log(`[ADMIN] Promo button clicked by ${telegramId}`);
+      const lang = user.language || 'en';
       const text = t(lang, "advertiseMenu");
       const keyboard = {
         reply_markup: {
@@ -1286,11 +1291,12 @@ from that bot here for verification.`;
         reply_markup: keyboard.reply_markup
       });
     } else if (query.data === "upgrade") {
+      const lang = user.language || 'en';
       const currentLevel = user.miningLevel;
       const nextLevel = currentLevel + 1;
-      const cost = UPGRADE_COSTS[currentLevel];
+      const cost = UPGRADE_COSTS[nextLevel]; // Correctly check for next level's cost
       
-      if (!cost) {
+      if (cost === undefined) {
         bot?.sendMessage(chatId, t(lang, "maxLevelReached"));
         return;
       }
@@ -1414,6 +1420,7 @@ ${t(lang, "infoNote")}
       });
 
     } else if (query.data === "earnings") {
+      const lang = user.language || 'en';
       const activeTasks = await storage.getActiveTasksForUser(user.id);
       
       if (activeTasks.length === 0) {
@@ -1451,6 +1458,7 @@ ${t(lang, "newTasks")}
       }
 
     } else if (query.data === "task_list") {
+      const lang = user.language || 'en';
       const activeTasks = await storage.getActiveTasksForUser(user.id);
       let text = `${t(lang, "taskList")}\n\n`;
       const inline_keyboard: any[][] = [];
@@ -1469,6 +1477,7 @@ ${t(lang, "newTasks")}
       });
 
     } else if (query.data.startsWith("view_task_")) {
+      const lang = user.language || 'en';
       const taskId = parseInt(query.data.split("_")[2]);
       const task = await storage.getTask(taskId);
       if (!task) return;

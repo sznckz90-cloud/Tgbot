@@ -118,7 +118,7 @@ const translations: Record<string, Record<string, string>> = {
     channelPromoInfo: "📈 Advertise\n↳ Advertise your Telegram Channel or Group\n\nYour channel or group will be promoted to thousands of users.\n\n↳ 💰 Cost: 0.250 TON\n↳ 📌 Task limit: 1000 users\n\n➕ Add this bot @{botUsername} as ADMIN\nto verify whether users have joined.\n\n📝 Enter your channel or group URL to continue.",
     subscribeChannel: "📢 Subscribe",
     notJoined: "❌ You haven't joined the channel yet. Please join first!",
-    enterChannelUrl: "📝 Enter the channel or group URL:",
+    enterChannelUrl: "📈 Advertise\n↳ Advertise your Telegram Channel or Group\n\nYour channel or group will be promoted to thousands of users.\n\n↳ 💰 Cost: 0.250 TON\n↳ 📌 Task limit: 1000 users\n\n➕ Add this bot @{botUsername} as ADMIN\nto verify whether users have joined.\n\n📝 Enter your channel or group URL to continue.",
     taskPublished: "🎉 Your task has been published successfully!",
     botPromoInfo: "📈 Advertise\n↳ Advertise your Telegram Bot\n\nYour bot will be promoted to thousands of users.\n\n↳ 💰 Cost: 0.250 TON\n↳ 📌 Task limit: 1000 users\n\n📝 Enter your bot URL to continue.",
     enterBotUrl: "📝 Enter your bot URL (e.g., https://t.me/your_bot):",
@@ -1089,8 +1089,18 @@ from that bot here for verification.`;
       await storage.updateUser(user.id, { status: "awaiting_bot_url" } as any);
 
     } else if (query.data === "promo_channel_start") {
-      bot?.sendMessage(chatId, t(lang_cb, "enterChannelUrl"), { reply_markup: { force_reply: true } });
-      bot?.answerCallbackQuery(query.id);
+      const text = t(lang_cb, "enterChannelUrl");
+      bot?.editMessageText(text, {
+        chat_id: chatId,
+        message_id: messageId,
+        parse_mode: "Markdown",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: t(lang_cb, "back"), callback_data: "advertise_menu" }]
+          ]
+        }
+      });
+      await storage.updateUser(user.id, { status: "awaiting_channel_url" } as any);
 
     } else if (query.data === "my_tasks") {
       const creatorTasks = await storage.getTasksByCreator(user.id);

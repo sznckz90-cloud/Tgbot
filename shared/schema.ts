@@ -128,7 +128,7 @@ export const insertTaskSchema = createInsertSchema(tasks).omit({ id: true, creat
 export const insertUserTaskSchema = createInsertSchema(userTasks).omit({ id: true, createdAt: true });
 export const insertWithdrawalSchema = createInsertSchema(withdrawals).omit({ id: true, createdAt: true });
 export const insertPromoCodeSchema = createInsertSchema(promoCodes).omit({ id: true, createdAt: true });
-export const insertUserPromoCodeSchema = createInsertSchema(userPromoCodes).omit({ id: true, createdAt: true });
+export const insertUserPromoCodeSchema = createInsertSchema(userPromoCodes).omit({ id: true });
 
 // === TYPES ===
 export type User = typeof users.$inferSelect;

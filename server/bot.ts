@@ -18,7 +18,6 @@ const translations: Record<string, Record<string, string>> = {
     account: "👤 Account",
     earnings: "💸 Earnings",
     withdraw: "🏦 Withdraw",
-    advertise: "📈 Advertise",
     info: "ℹ️ Info",
     back: "↩️ Back",
     subscribe: "🚀 Subscribe",
@@ -122,8 +121,6 @@ const translations: Record<string, Record<string, string>> = {
     forwardMessage: "📩 Please forward ANY message from the promoted bot.",
     adminChannelPost: "📌 New Task: Subscribe to the Channel\n\n➡️ Join the channel using the button below\n➡️ Stay subscribed for at least 24 hours\n\n⚠️ Reward will be credited after verification.",
     claimReward: "👉 Click here to claim 👈",
-    taskCompleted: "🎉 Task Completed Successfully!\n\n💰 Reward Earned: {reward} TON\n📌 Task: {title}\n\n✅ Your reward has been credited to your balance.\n\n⏳ Please keep the channel joined\nfor the required time to avoid penalty.",
-    addBotAsAdmin: "❌ Please add the bot @{botUsername} as an administrator in your channel first to verify users!",
   },
   ru: {
     selectLanguage: "Выберите язык / Select language",
@@ -137,7 +134,6 @@ const translations: Record<string, Record<string, string>> = {
     account: "👤 Аккаунт",
     earnings: "💸 Заработок",
     withdraw: "🏦 Вывод",
-    advertise: "📈 Реклама",
     info: "ℹ️ Инфо",
     back: "↩️ Назад",
     subscribe: "🚀 Подписаться",
@@ -222,27 +218,6 @@ const translations: Record<string, Record<string, string>> = {
     started: "✅ Запущен",
     skip: "↪️ Пропустить",
     check: "🔄 Проверить",
-    advertiseMenu: "📈 Реклама\n↳ Рекламируйте свой Telegram-канал или группу\n\nВаш канал или группа будет показан тысячам пользователей.\n\n↳ 💰 Стоимость: 0.250 TON\n↳ 📌 Лимит заданий: 1000 пользователей\n\n➕ Добавьте этого бота @{botUsername} как АДМИНА\nчтобы проверять, присоединились ли пользователи.\n\n📝 Введите URL канала или группы для продолжения.",
-    advertiseChannel: "📢 Канал",
-    advertiseBots: "🤖 Боты",
-    myTasks: "💼 Мои задания",
-    channelPromoInfo: "📈 Реклама\n↳ Рекламируйте свой Telegram-канал или группу\n\nВаш канал или группа будет показан тысячам пользователей.\n\n↳ 💰 Стоимость: 0.250 TON\n↳ 📌 Лимит заданий: 1000 пользователей\n\n➕ Добавьте этого бота @{botUsername} как АДМИНА\nчтобы проверять, присоединились ли пользователи.\n\n📝 Введите URL канала или группы для продолжения.",
-    subscribeChannel: "📢 Подписаться",
-    notJoined: "❌ Вы ещё не подписались на канал. Пожалуйста, подпишитесь сначала!",
-    enterChannelUrl: "📝 Введите URL канала или группы:",
-    taskPublished: "🎉 Ваше задание успешно опубликовано!",
-    botPromoInfo: "📈 Реклама\n↳ Рекламируйте свой Telegram-бот\n\nВаш бот будет продвинут тысячам пользователей.\n\n↳ 💰 Стоимость: 0.250 TON\n↳ 📌 Лимит заданий: 1000 пользователей\n\n📝 Введите URL бота для продолжения.",
-    enterBotUrl: "📝 Введите URL бота (например, https://t.me/your_bot):",
-    forwardBotMsg: "📌 Перешлите ЛЮБОЕ сообщение от бота, которого вы хотите продвигать, сюда для проверки.",
-    botVerified: "✅ Бот успешно проверен.\n\nВыберите, что делать дальше 👇",
-    publishTask: "📢 Опубликовать задание",
-    addReferralLink: "🔗 Добавить реф. ссылку",
-    startBot: "🤖 Запустить бота",
-    forwardMessage: "📩 Пожалуйста, перешлите ЛЮБОЕ сообщение от продвигаемого бота.",
-    adminChannelPost: "📌 New Task: Subscribe to the Channel\n\n➡️ Join the channel using the button below\n➡️ Stay subscribed for at least 24 hours\n\n⚠️ Reward will be credited after verification.",
-    claimReward: "👉 Нажмите здесь, чтобы забрать 👈",
-    taskCompleted: "🎉 Задание успешно выполнено!\n\n💰 Полученная награда: {reward} TON\n📌 Задание: {title}\n\n✅ Награда зачислена на ваш баланс.\n\n⏳ Пожалуйста, оставайтесь в канале\nв течение необходимого времени, чтобы избежать штрафа.",
-    addBotAsAdmin: "❌ Пожалуйста, сначала добавьте бота @{botUsername} в качестве администратора в ваш канал для проверки пользователей!",
   },
 };
 
@@ -415,7 +390,6 @@ export function setupBot() {
           [{ text: t(lang, "upgrade"), callback_data: "upgrade" }],
           [{ text: t(lang, "partners"), callback_data: "partners" }, { text: t(lang, "account"), callback_data: "account" }],
           [{ text: t(lang, "earnings"), callback_data: "earnings" }, { text: t(lang, "withdraw"), callback_data: "withdraw" }],
-          [{ text: t(lang, "advertise"), callback_data: "advertise_menu" }],
           [{ text: t(lang, "info"), callback_data: "info" }]
         ]
       }
@@ -596,287 +570,28 @@ from that bot here for verification.`;
     if (!user) return;
     const lang_msg = user.language;
 
-    // Handle channel URL input for promotion
-    if (msg.text && user.status === "awaiting_channel_url" && !msg.text.startsWith("/")) {
-      const text = msg.text.trim();
-      const channelMatch = text.match(/(?:https?:\/\/)?t\.me\/([a-zA-Z0-9_]+)/i);
-      
-      if (channelMatch) {
-        const channelUsername = channelMatch[1];
-        const cost = 0.250;
-        
-        const isFree = isSuperAdmin(telegramId);
-        const actualCost = isFree ? 0 : cost;
-
-        if (!isFree && user.balance < actualCost) {
-          bot?.sendMessage(chatId, t(user.language, "insufficientFunds"));
-          await storage.updateUser(user.id, { status: "active" } as any);
-          return;
-        }
-
-        await storage.updateUser(user.id, { 
-          balance: user.balance - actualCost, 
-          status: "active" 
-        } as any);
-        
-        const myBot = await bot?.getMe();
-        const channelLink = `https://t.me/${channelUsername}`;
-        
-        const task = await storage.createTask({
-          type: "channel",
-          title: `Subscribe to the Channel`,
-          description: `Join the channel and stay subscribed`,
-          reward: 0.05,
-          link: channelLink,
-          targetBotUsername: channelUsername,
-          creatorId: user.id,
-          maxCompletions: 1000,
-          currentCompletions: 0,
-          isActive: true
-        });
-
-        const taskLink = `https://t.me/${myBot?.username}?start=task_${task.id}`;
-        const channelMessage = t(user.language, "adminChannelPost");
-        
-        try {
-          await bot?.sendMessage(TASK_CHANNEL_ID, channelMessage, { 
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: t(user.language, "claimReward"), url: taskLink }]
-              ]
-            }
-          });
-        } catch (e) {
-          console.error("Failed to post to channel:", e);
-        }
-
-        bot?.sendMessage(chatId, t(user.language, "taskPublished"), { parse_mode: "Markdown" });
-        return;
-      } else {
-        bot?.sendMessage(chatId, "❌ Invalid URL. Please send a valid URL like https://t.me/channelname");
-        return;
-      }
-    }
-
-    if (msg.text && user.status === "awaiting_bot_url" && !msg.text.startsWith("/")) {
-      const text = msg.text.trim();
-      const botUrlMatch = text.match(/(?:https?:\/\/)?t\.me\/([a-zA-Z0-9_]+)/i);
-      
-      if (botUrlMatch) {
-        const botUsername = botUrlMatch[1];
-        const cost = 0.250;
-        
-        const isSuper = isSuperAdmin(user.telegramId);
-        if (!isSuper && user.balance < cost) {
-          bot?.sendMessage(chatId, t(user.language, "insufficientFunds"));
-          await storage.updateUser(user.id, { status: "active" } as any);
-          return;
-        }
-
-        if (!isSuper) {
-          await storage.updateUser(user.id, { balance: user.balance - cost });
-        }
-        await storage.updateUser(user.id, { status: "active" } as any);
-        
-        const myBot = await bot?.getMe();
-        const botLink = `https://t.me/${botUsername}`;
-        
-        const task = await storage.createTask({
-          type: "bot",
-          title: `Start @${botUsername}`,
-          description: `Start the bot to earn reward`,
-          reward: 0.0001,
-          link: botLink,
-          targetBotUsername: botUsername,
-          creatorId: user.id,
-          maxCompletions: 1000,
-          currentCompletions: 0,
-          isActive: true
-        });
-
-        // Auto publish to channel with new format
-        const taskLink = `https://t.me/${myBot?.username}?start=task_${task.id}`;
-        const channelMessage = `📌 *New Task: Start the Bot*
-
-➡️ Open the bot using the button below
-➡️ Do NOT block the bot for at least 24 hours
-❗ Blocking before 24 hours may lead to penalty
-
-⚠️ Reward will be credited after verification.`;
-        
-        try {
-          await bot?.sendMessage(TASK_CHANNEL_ID, channelMessage, { 
-            parse_mode: "Markdown",
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: "👉 Click here to claim 👈", url: taskLink }]
-              ]
-            }
-          });
-        } catch (e) {
-          console.error("Failed to post to channel:", e);
-        }
-
-        bot?.sendMessage(chatId, t(user.language, "taskPublished"), { parse_mode: "Markdown" });
-        return;
-      } else {
-        bot?.sendMessage(chatId, "❌ Invalid bot URL. Please send a valid URL like https://t.me/your_bot");
-        return;
-      }
-    }
-
-    // Handle forwarded bot messages for task verification
-    if (msg.forward_from && msg.forward_from.is_bot && user.status === "awaiting_bot_verification") {
-      const forwardedBotUsername = msg.forward_from.username;
-      
-      // Get the user's pending task
-      const pendingUserTask = await storage.getPendingUserTask(user.id);
-      if (pendingUserTask) {
-        const task = await storage.getTask(pendingUserTask.taskId);
-        if (task && task.targetBotUsername === forwardedBotUsername) {
-          // Verification successful
-          await storage.updateUserTask(user.id, pendingUserTask.taskId, { status: "completed", verifiedAt: new Date() });
-          await storage.updateUser(user.id, { 
-            balance: user.balance + task.reward,
-            status: "active"
-          } as any);
-          await storage.incrementTaskCompletion(task.id);
-          
-          bot?.sendMessage(chatId, `✅ Task verified! You earned ${task.reward} TON.`);
-        } else {
-          bot?.sendMessage(chatId, "❌ This message is not from the correct bot. Please forward a message from the promoted bot.");
-        }
-      }
-      return;
-    }
-
-    // Legacy: Handle forwarded bot messages for promotion
-    const lang_forward = user.language;
-    if (msg.forward_from && msg.forward_from.is_bot && user.status === "awaiting_bot_forward") {
-      const botUsername = msg.forward_from.username;
-      const cost = 0.250;
-      
-      const bypass = isSuperAdmin(user.telegramId);
-      if (!bypass && user.balance < cost) {
-        bot?.sendMessage(chatId, t(lang_forward, "insufficientFunds"));
-        await storage.updateUser(user.id, { status: "active" } as any);
+    // Handle wallet address input for withdrawal
+    if (msg.text && user.status === "awaiting_withdrawal_address" && !msg.text.startsWith("/")) {
+      const walletAddress = msg.text.trim();
+      if (walletAddress.length < 10) {
+        bot?.sendMessage(chatId, "❌ Invalid wallet address. Please try again.");
         return;
       }
 
-      await storage.updateUser(user.id, { balance: bypass ? user.balance : user.balance - cost, status: "active" } as any);
-      
-      const myBot = await bot?.getMe();
-      const botLink = `https://t.me/${botUsername}`;
-      
-      const task = await storage.createTask({
-        type: "bot",
-        title: `Start @${botUsername}`,
-        description: `Start the bot to earn reward`,
-        reward: 0.0001,
-        link: botLink,
-        targetBotUsername: botUsername,
-        creatorId: user.id,
-        maxCompletions: 1000,
-        currentCompletions: 0,
-        isActive: true
+      const withdrawal = await storage.createWithdrawal({
+        userId: user.id,
+        amount: user.balance,
+        walletAddress,
+        status: "pending"
       });
 
-      // Auto publish to channel with new format
-      const taskLink = `https://t.me/${myBot?.username}?start=task_${task.id}`;
-      const channelMessage = `📌 *New Task: Start the Bot*
+      await storage.updateUser(user.id, { 
+        balance: 0,
+        status: "active"
+      } as any);
 
-➡️ Open the bot using the button below
-➡️ Do NOT block the bot for at least 24 hours
-❗ Blocking before 24 hours may lead to penalty
-
-⚠️ Reward will be credited after verification.`;
-      
-      try {
-        await bot?.sendMessage(TASK_CHANNEL_ID, channelMessage, { 
-          parse_mode: "Markdown",
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: "👉 Click here to claim 👈", url: taskLink }]
-            ]
-          }
-        });
-      } catch (e) {
-        console.error("Failed to post to channel:", e);
-      }
-
-      bot?.sendMessage(chatId, t(user.language, "taskPublished"), { parse_mode: "Markdown" });
+      bot?.sendMessage(chatId, `✅ Withdrawal request submitted!\n\n💰 Amount: ${withdrawal.amount.toFixed(4)} TON\n👛 Wallet: \`${withdrawal.walletAddress}\`\n\nWait for admin processing.`, { parse_mode: "Markdown" });
       return;
-    }
-
-    // Handle replies for advertising
-    if (msg.reply_to_message) {
-      const replyText = msg.reply_to_message.text;
-
-      // Channel URL Promotion
-      if (replyText === t(user.language, "enterChannelUrl")) {
-        const url = msg.text;
-        if (url && (url.startsWith("https://t.me/") || url.startsWith("@"))) {
-          const cost = 0.250;
-          if (!isSuperAdmin(user.telegramId) && user.balance < cost) {
-            bot?.sendMessage(chatId, t(user.language, "insufficientFunds"));
-            return;
-          }
-
-          if (!isSuperAdmin(user.telegramId)) {
-            await storage.updateUser(user.id, { balance: user.balance - cost });
-          }
-          
-          const myBot = await bot?.getMe();
-          const referralLink = `https://t.me/${myBot?.username}?start=${telegramId}`;
-          
-          await storage.createTask({
-            type: "channel",
-            title: `Join ${url}`,
-            description: "Join the channel to earn reward",
-            reward: 0.0001,
-            link: url,
-            creatorId: user.id,
-            maxCompletions: 1000,
-            currentCompletions: 0,
-            isActive: true
-          });
-
-          // Auto publish to channel
-          const channelMessage = `📢 *New Channel Task*\n\n📌 Join ${url}\n💰 Reward: 0.0001 TON\n👥 Limit: 1000 users\n\n🔗 Referral: ${referralLink}`;
-          try {
-            await bot?.sendMessage(TASK_CHANNEL_ID, channelMessage, { parse_mode: "Markdown" });
-          } catch (e) {
-            console.error("Failed to post to channel:", e);
-          }
-
-          bot?.sendMessage(chatId, t(user.language, "taskPublished"), { parse_mode: "Markdown" });
-        } else {
-          bot?.sendMessage(chatId, "❌ Invalid URL. Please try again.");
-        }
-        return;
-      }
-
-      // Legacy Bot Forward Promotion (fallback)
-      if (replyText === t(user.language, "forwardBotMsg")) {
-        if (msg.forward_from && msg.forward_from.is_bot) {
-          const botUser = msg.forward_from.username;
-          
-          const confirmText = t(user.language, "botVerified");
-          const keyboard = {
-            reply_markup: {
-              inline_keyboard: [
-                [{ text: t(user.language, "publishTask"), callback_data: `publish_bot_${botUser}` }],
-                [{ text: t(user.language, "back"), callback_data: "advertise_menu" }]
-              ]
-            }
-          };
-          bot?.sendMessage(chatId, confirmText, keyboard);
-        } else {
-          bot?.sendMessage(chatId, "❌ Please forward a message from a BOT.");
-        }
-        return;
-      }
     }
 
     if (msg.text && ["🇷🇺 Русский", "🇬🇧 English", "🇪🇸 Español", "🇵🇹 Português", "🇫🇷 Français", "🇾🇪 العربية"].includes(msg.text)) {
@@ -1127,94 +842,7 @@ from that bot here for verification.`;
       return;
     }
 
-    if (query.data === "promo_channel") {
-      const lang = user.language || 'en';
-      const channelUrl = "https://t.me/your_channel_link"; 
-      const text = t(lang, "missionChannel");
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "subscribeChannel"), url: channelUrl }],
-            [{ text: t(lang, "joined"), callback_data: "check_subscription" }],
-            [{ text: t(lang, "back"), callback_data: "advertise_menu" }]
-          ]
-        }
-      });
-      bot?.answerCallbackQuery(query.id);
-      return;
-    }
-
-    if (query.data === "advertise_bot") {
-      const text = t(lang_cb, "botPromoInfo");
-      const keyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang_cb, "back"), callback_data: "advertise_menu" }]
-          ]
-        }
-      };
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: keyboard.reply_markup
-      });
-      await storage.updateUser(user.id, { status: "awaiting_bot_url" } as any);
-
-
-    } else if (query.data === "my_tasks") {
-      const creatorTasks = await storage.getTasksByCreator(user.id);
-      let text = t(lang_cb, "myTasks") + "\n\n";
-      if (creatorTasks.length === 0) {
-        text += t(lang_cb, "noTasks");
-      } else {
-        creatorTasks.forEach(task => {
-          text += `📌 *${task.title}*\nStatus: ${task.isActive ? "Active" : "Completed"}\nCompletions: ${task.currentCompletions}/${task.maxCompletions}\n\n`;
-        });
-      }
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: getBackButton(lang_cb).reply_markup
-      });
-      return;
-
-    } else if (query.data.startsWith("publish_bot_")) {
-      const botUser = query.data.split("_")[2];
-      const cost = 0.250;
-      // Admin & Super Admin skip balance check
-      if (!isSuperAdmin(user.telegramId) && user.balance < cost) {
-        bot?.answerCallbackQuery(query.id, { text: t(lang_cb, "insufficientFunds"), show_alert: true });
-        return;
-      }
-
-      if (!isSuperAdmin(user.telegramId)) {
-        await storage.updateUser(user.id, { balance: user.balance - cost });
-      }
-      await storage.createTask({
-        type: "bot",
-        title: `Start @${botUser}`,
-        description: "Start the bot to earn reward",
-        reward: 0.0001,
-        link: `https://t.me/${botUser}`,
-        creatorId: user.id,
-        maxCompletions: 1000,
-        currentCompletions: 0,
-        isActive: true
-      });
-
-      bot?.editMessageText(t(lang_cb, "taskPublished"), {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: getBackButton(lang_cb).reply_markup
-      });
-
-    } else if (query.data === "back_to_menu" || query.data === "refresh") {
+    if (query.data === "back_to_menu" || query.data === "refresh") {
       await storage.updateUser(user.id, { status: "active" } as any);
       const now = Date.now();
       const lastClaim = user.lastClaimTime;
@@ -1282,58 +910,7 @@ from that bot here for verification.`;
       }
       return;
     } else if (query.data.startsWith("verify_bot_task_")) {
-      const taskId = parseInt(query.data.split("_")[3]);
       bot?.sendMessage(chatId, t(user.language, "forwardBotMsg"), { reply_markup: { force_reply: true } });
-      return;
-    } else if (query.data === "promo_channel") {
-      const lang = user.language || 'en';
-      const channelUrl = "https://t.me/your_channel_link"; // Use the main channel link
-      const text = t(lang, "missionChannel");
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "advertiseChannel"), url: channelUrl }],
-            [{ text: t(lang, "joined"), callback_data: "check_subscription" }],
-            [{ text: t(lang, "back"), callback_data: "advertise_menu" }]
-          ]
-        }
-      });
-      return;
-    } else if (query.data === "promo_bot") {
-      const lang = user.language || 'en';
-      const text = t(lang, "botPromoInfo");
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: t(lang, "back"), callback_data: "advertise_menu" }]
-          ]
-        }
-      });
-      return;
-    } else if (query.data === "advertise_menu") {
-      await storage.updateUser(user.id, { status: "active" } as any);
-      const lang = user.language || 'en';
-      const text = t(lang, "advertiseMenu");
-      const keyboard = {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "📢 Channel", callback_data: "promo_channel" }, { text: "🤖 Bots", callback_data: "promo_bot" }],
-            [{ text: t(lang, "back"), callback_data: "back_to_main" }]
-          ]
-        }
-      };
-      bot?.editMessageText(text, {
-        chat_id: chatId,
-        message_id: messageId,
-        parse_mode: "Markdown",
-        ...keyboard
-      });
       return;
     }
   });

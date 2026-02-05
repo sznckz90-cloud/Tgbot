@@ -18,8 +18,6 @@ export interface IStorage {
   getUserTask(userId: number, taskId: number): Promise<UserTask | undefined>;
   createUserTask(userTask: InsertUserTask): Promise<UserTask>;
   updateUserTask(userId: number, taskId: number, updates: Partial<UserTask>): Promise<UserTask>;
-  createTask(task: InsertTask): Promise<Task>;
-  getTasksByCreator(creatorId: number): Promise<Task[]>;
   incrementTaskCompletion(taskId: number): Promise<void>;
   getPendingUserTask(userId: number): Promise<UserTask | undefined>;
 }
@@ -134,15 +132,6 @@ export class DatabaseStorage implements IStorage {
 
   async getAllUsers(): Promise<User[]> {
     return await db.select().from(users).orderBy(desc(users.createdAt));
-  }
-
-  async createTask(insertTask: InsertTask): Promise<Task> {
-    const [task] = await db.insert(tasks).values(insertTask).returning();
-    return task;
-  }
-
-  async getTasksByCreator(creatorId: number): Promise<Task[]> {
-    return await db.select().from(tasks).where(eq(tasks.creatorId, creatorId)).orderBy(desc(tasks.createdAt));
   }
 
   async incrementTaskCompletion(taskId: number): Promise<void> {

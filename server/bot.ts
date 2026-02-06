@@ -1,5 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import { storage } from "./storage";
+import crypto from "crypto";
 
 let botInstance: TelegramBot | null = null;
 let isPolling = false;
@@ -379,9 +380,11 @@ export function setupBot() {
   }
 
   function getMainMenuKeyboard(lang: string | null | undefined) {
+    const webAppUrl = process.env.APP_URL || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
     return {
       reply_markup: {
         inline_keyboard: [
+          [{ text: "📺 Watch Ads & Earn", web_app: { url: webAppUrl } }],
           [{ text: t(lang, "refresh"), callback_data: "refresh" }],
           [{ text: t(lang, "upgrade"), callback_data: "upgrade" }],
           [{ text: t(lang, "partners"), callback_data: "partners" }, { text: t(lang, "withdraw"), callback_data: "withdraw" }],
@@ -831,7 +834,27 @@ from that bot here for verification.`;
       return;
     }
 
-    if (query.data === "back_to_menu" || query.data === "refresh") {
+    if (query.data === "launch_app") {
+      const userResult = await storage.getUserByTelegramId(query.from?.id.toString() || "");
+      if (!userResult) return;
+      const token = crypto.randomBytes(16).toString("hex");
+      const expiresAt = new Date(Date.now() + 5 * 60 * 1000); // 5 mins
+      await storage.updateUser(userResult.id, {
+        authSessionToken: token,
+        authSessionExpiresAt: expiresAt
+      });
+
+      const webAppUrl = process.env.APP_URL || `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
+      const launchUrl = `${webAppUrl}/?userId=${userResult.telegramId}&token=${token}`;
+      
+      bot?.editMessageText("🚀 Launching Ad Watch App...", {
+        chat_id: chatId,
+        message_id: query.message?.message_id,
+        reply_markup: {
+          inline_keyboard: [[{ text: "▶️ Open App", url: launchUrl }]]
+        }
+      });
+    } else if (query.data === "back_to_menu" || query.data === "refresh") {
       await storage.updateUser(user.id, { status: "active" } as any);
       const now = Date.now();
       const lastClaim = user.lastClaimTime;

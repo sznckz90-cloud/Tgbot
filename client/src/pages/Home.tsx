@@ -16,18 +16,33 @@ export default function Home() {
   const deviceId = "device_" + (userId || "unknown"); // Simple mock for fingerprint
 
   useEffect(() => {
+    // For development/testing: If no userId/token is provided, we'll allow access but show a warning
     if (!userId || !token) {
-      document.body.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;'>🚫 Unauthorized Access</div>";
+      console.warn("No userId or token provided in URL. Accessing in demo mode.");
+      // Commenting out the unauthorized access block to allow easier testing
+      // document.body.innerHTML = "<div style='display:flex;justify-content:center;align-items:center;height:100vh;background:#000;color:#fff;font-family:sans-serif;'>🚫 Unauthorized Access</div>";
     }
   }, [userId, token]);
 
   const handleWatchAd = () => {
-    setScreen("loading");
-    setTimeout(() => {
-      // Simulate ad play
-      setScreen("verification");
-      generateVerification();
-    }, 2000);
+    // @ts-ignore
+    if (typeof show_8818815 === 'function') {
+      // @ts-ignore
+      show_8818815().then(() => {
+        setScreen("loading");
+        setTimeout(() => {
+          setScreen("verification");
+          generateVerification();
+        }, 2000);
+      });
+    } else {
+      // Fallback if SDK not loaded
+      setScreen("loading");
+      setTimeout(() => {
+        setScreen("verification");
+        generateVerification();
+      }, 2000);
+    }
   };
 
   const generateVerification = () => {

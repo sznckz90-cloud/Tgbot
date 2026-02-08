@@ -11,7 +11,6 @@ export const users = pgTable("users", {
   firstName: text("first_name"),
   languageCode: text("language_code"),
   balance: real("balance").default(0).notNull(),
-  miningLevel: integer("mining_level").default(1).notNull(),
   lastClaimTime: bigint("last_claim_time", { mode: "number" }).notNull(), // timestamp in ms
   referrerId: text("referrer_id"), // telegram_id of referrer
   referralCount: integer("referral_count").default(0).notNull(),
